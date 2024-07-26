@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String         @id @default(uuid())
+  email             String         @unique
+  name              String?
+  password          String
+  location          String?
+  services          Services[]     @relation("UserServices")
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  notifications     Notification[]
+  sentMessages      ChatMessage[]  @relation("SentMessages")
+  receivedMessages  ChatMessage[]  @relation("ReceivedMessages")
+  chatRooms         ChatRoom[]     @relation("UserChatRooms")
+}
+
+model ServiceProvider {
+  id                String         @id @default(uuid())
+  email             String         @unique
+  name              String
+  password          String
+  contactNo         String
+  type              String
+  location          String
+  services          Services[]     @relation("ProviderServices")
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  notifications     Notification[]
+  chatRooms         ChatRoom[]     @relation("ProviderChatRooms")
+}
+
+model Services {
+  id               String          @id @default(uuid())
+  userId           String?
+  providerId       String?
+  serviceType      String
+  user             User?           @relation("UserServices", fields: [userId], references: [id])
+  provider         ServiceProvider?@relation("ProviderServices", fields: [providerId], references: [id])
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+}
+
+model Notification {
+  id         String       @id @default(uuid())
+  userId     String?
+  providerId String?
+  content    String
+  read       Boolean      @default(false)
+  user       User?        @relation(fields: [userId], references: [id])
+  provider   ServiceProvider? @relation(fields: [providerId], references: [id])
+  createdAt  DateTime     @default(now())
+}
+
+model ChatMessage {
+  id         String       @id @default(uuid())
+  senderId   String
+  receiverId String
+  roomId     String
+  content    String
+  sentAt     DateTime     @default(now())
+  sender     User?        @relation("SentMessages", fields: [senderId], references: [id])
+  receiver   User?        @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  room       ChatRoom     @relation(fields: [roomId], references: [id])
+}
+
+model ChatRoom {
+  id               String             @id @default(uuid())
+  userId           String
+  providerId       String
+  messages         ChatMessage[]
+  user             User               @relation("UserChatRooms", fields: [userId], references: [id])
+  provider         ServiceProvider    @relation("ProviderChatRooms", fields: [providerId], references: [id])
+  createdAt        DateTime           @default(now())
+}
