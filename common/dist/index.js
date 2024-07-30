@@ -9,9 +9,10 @@ exports.signupInput = zod_1.default.object({
     email: zod_1.default.string().email("Invalid email address"),
     password: zod_1.default.string().min(8, "Password must be atleast 8 characters"),
     name: zod_1.default.string().min(1),
+    role: zod_1.default.string(),
     contactNo: zod_1.default.string().regex(/^\+?[1-9]\d{1,14}$/, "Invalid contact number"),
     type: zod_1.default.string().optional(),
-    location: zod_1.default.string()
+    location: zod_1.default.string().optional()
 });
 exports.signinInput = zod_1.default.object({
     email: zod_1.default.string().email("Invalid email address"),

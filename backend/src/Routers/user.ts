@@ -26,7 +26,7 @@ authRouter.post("/signup", async (c) => {
 
   try {
     let user;
-    if (body.role === 'service-provider') {
+    if (body.role === 'service') {
       user = await prisma.serviceProvider.create({
         data: {
           name: body.name,
@@ -42,7 +42,7 @@ authRouter.post("/signup", async (c) => {
         }
       });
     } else {
-        user = await prisma.user.create({
+      user = await prisma.user.create({
         data: {
           name: body.name,
           contactNo: body.contactNo,

@@ -23,7 +23,10 @@ interface ServiceCreateBody {
 }
 
 serviceRouter.post('/create', async (c) => {
-  const prisma = new PrismaClient().$extends(withAccelerate());
+
+  const prisma = new PrismaClient({
+    datasourceUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
 
   try {
     const body: ServiceCreateBody = await c.req.json();

@@ -10,7 +10,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@jaimil/linksy": "^1.0.3",
     "@types/leaflet": "^1.9.12",
+    "axios": "^1.7.2",
     "framer-motion": "^11.3.19",
     "leaflet": "^1.9.4",
     "react": "^18.3.1",

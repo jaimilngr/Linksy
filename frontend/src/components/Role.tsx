@@ -3,25 +3,35 @@ import { motion } from "framer-motion";
 
 type RoleType = "user" | "service" | "admin";
 
-export const Role = () => {
+interface RoleProps {
+  onRoleSelect: (role: RoleType) => void;
+}
+
+export const Role = ({ onRoleSelect }: RoleProps) => {
   const [selectedRole, setSelectedRole] = useState<RoleType | null>(null);
 
   const handleRoleClick = (role: RoleType) => {
     setSelectedRole(role);
   };
 
+  const handleContinueClick = () => {
+    if (selectedRole) {
+      onRoleSelect(selectedRole);
+    }
+  };
+
   const cardClasses = (role: RoleType) =>
-    `bg-white border-4 px-8 py-6 rounded-lg shadow-md flex flex-col items-center justify-center transition duration-300 ease-in-out ${
+    `bg-white border-4 px-8 py-2 rounded-lg shadow-md flex flex-col items-center justify-center transition duration-300 ease-in-out ${
       selectedRole === role
         ? "bg-blue-100 border-green-600"
         : "border-blue-500 hover:bg-sky-100"
     }`;
 
   return (
-    <div className="h-screen w-full flex justify-center items-center bg-[#171723]">
-      <div className="bg-white p-8 rounded-lg shadow-lg">
+    <div className="h-screen w-full flex justify-center items-center">
+      <div className="p-8 rounded-lg">
         <div className="flex justify-center mb-8">
-          <h1 className="font-bold text-3xl">Select your user Type</h1>
+          <h1 className="font-bold text-4xl text-white">Select your user Type</h1>
         </div>
         <div className="flex justify-center gap-6">
           <motion.button
@@ -79,6 +89,7 @@ export const Role = () => {
         <div className="flex justify-center mt-8">
           <button
             type="button"
+            onClick={handleContinueClick}
             className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 focus:outline-none"
           >
             Continue
