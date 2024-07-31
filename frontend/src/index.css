@@ -19,3 +19,26 @@
   body {
     @apply font-body;
   }
+  
+  @layer base {
+    :root {
+      --text: #141619;
+      --background: #f4f3fa;
+      --primary: #2a3e60;
+      --secondary: #7a9cd6;
+      --accent: #2458b7;
+    }
+  
+    .dark {
+      --text: #e6e8eb;
+      --background: #030911;
+      --primary: #9fb3d5;
+      --secondary: #294a85;
+      --accent: #487bdb;
+    }
+  
+    body {
+      color: var(--text);
+      background-color: var(--background);
+    }
+  }

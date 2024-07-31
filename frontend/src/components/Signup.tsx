@@ -72,7 +72,7 @@ const SignUp = ({ handleGoBack }: SignUpProps) => {
           >
             &times;
           </button>
-          <p className="font-sans text-5xl text-white font-bold mb-8 mt-5">
+          <p className="font-sans text-4xl text-white font-bold mb-8 mt-5 md:text-5xl">
             Enter your details
           </p>
           <form className="flex flex-col gap-4 w-full max-w-md px-10" onSubmit={handleSubmit}>

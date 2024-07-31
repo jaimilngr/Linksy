@@ -19,8 +19,8 @@ export const Auth = () => {
   };
 
   return (
-    <div className=" h-screen overflow-hidden bg-[#1e1e2b]">
-      <div className=" inset-0 bg-[#1e1e2b] "></div>
+    <div className="relative h-screen overflow-hidden ">
+      <div className=" absolute inset-0  bg-[#333246] blur-2xl "></div>
 
       <AnimatePresence>
         {view === "initial" && (
@@ -30,9 +30,9 @@ export const Auth = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.4 }}
-            className="relative flex flex-col justify-center items-center h-full z-10"
+            className="relative flex flex-col justify-center items-center h-screen z-10"
           >
-            <p className="font-sans text-5xl text-white font-bold mb-8">
+            <p className="font-sans text-4xl text-white font-bold mb-8 md:text-5xl">
               Let's get started
             </p>
             <div className="flex flex-col gap-4">

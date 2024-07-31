@@ -28,10 +28,10 @@ export const Role = ({ onRoleSelect }: RoleProps) => {
     }`;
 
   return (
-    <div className="h-screen w-full flex justify-center items-center">
+    <div className=" relative h-screen w-full flex justify-center items-center">
       <div className="p-8 rounded-lg">
         <div className="flex justify-center mb-8">
-          <h1 className="font-bold text-4xl text-white">Select your user Type</h1>
+          <h1 className="font-bold text-3xl text-white md:text-4xl text-center">Select your user Type</h1>
         </div>
         <div className="flex justify-center gap-6">
           <motion.button
@@ -68,23 +68,7 @@ export const Role = ({ onRoleSelect }: RoleProps) => {
             />
             <p className="text-center font-medium text-lg">Services</p>
           </motion.button>
-          <motion.button
-            className={cardClasses("admin")}
-            onClick={() => handleRoleClick("admin")}
-            role="button"
-            aria-pressed={selectedRole === "admin"}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-          >
-            <img
-              width="50"
-              height="50"
-              src="https://img.icons8.com/ios/50/admin-settings-male.png"
-              alt="Admin Icon"
-              className="mb-2"
-            />
-            <p className="text-center font-medium text-lg">Admin</p>
-          </motion.button>
+        
         </div>
         <div className="flex justify-center mt-8">
           <button

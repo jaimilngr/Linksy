@@ -43,7 +43,7 @@ const SignIn = ({ handleGoBack }: SignInProps) => {
     >
       <button
         onClick={handleGoBack}
-        className="text-white text-4xl border-2 border-red-500 rounded-full w-12 h-12 flex items-center justify-center hover:border-blue-500 hover:text-blue-500 transition-colors duration-300"
+        className="text-white text-4xl border-2 border-red-500 rounded-full w-12 h-12 flex items-center justify-center hover:border-blue-500 hover:text-blue-500 transition-colors duration-300 "
       >
         &times;
       </button>
