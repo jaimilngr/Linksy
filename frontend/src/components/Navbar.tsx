@@ -1,46 +1,91 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
-import '../index.css';
+import "../index.css";
 import { Mode } from "./Mode";
 
 export const Navbar = () => {
-    return (
-        <div className="flex justify-between items-center mx-auto bg-background dark:bg-background px-8 py-4 border-b border-gray-200 dark:border-gray-700">
-            <div className="w-44">
-                <Link to="/">
-                    <img src="/images/linksylogo.png" alt="Linksy" className="w-full" />
-                </Link>
-            </div>
-            <div className="flex">
-                <ul className="flex space-x-8 font-semibold text-xl">
-                    <li>
-                        <Link to="/services" className="text-text dark:text-text hover:underline">
-                            Services
-                        </Link>
-                    </li>
-                    <li>
-                        <Link to="/your-gains" className="text-text dark:text-text hover:underline">
-                            Your Gains
-                        </Link>
-                    </li>
-                    <li>
-                        <Link to="/process" className="text-text dark:text-text hover:underline">
-                            Process
-                        </Link>
-                    </li>
-                    <li>
-                        <Link to="/faq" className="text-text dark:text-text hover:underline">
-                            FAQ
-                        </Link>
-                    </li>
-                </ul>
-            </div>
-            <div className="flex">
-                <button type="button" className="text-white bg-accent hover:bg-accent-dark focus:outline-none focus:ring-4 focus:ring-accent-dark font-medium rounded-full text-sm px-5 py-2.5 mr-3">
-                    Sign up
-                </button>
-                <Mode/>
-            </div>
-            
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleToggle = () => {
+    setIsOpen(!isOpen);
+  };
+
+  // Define the navigation items
+  const navItems = [
+    { to: "#", label: "Services", current: true },
+    { to: "#", label: "Your Gains" },
+    { to: "#", label: "Process" },
+    { to: "#", label: "FAQ" },
+  ];
+
+  return (
+    <nav className="relative w-full z-20 top-0 start-0 border-b border-gray-400 bg-background dark:bg-background">
+      <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto py-5 px-5">
+        <a href="/" className="flex items-center space-x-3 rtl:space-x-reverse">
+          <span className="self-center text-2xl font-bold whitespace-nowrap sm:text-4xl">
+            Linksy
+          </span>
+        </a>
+        <div className="flex md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse">
+          <button
+            type="button"
+            className="text-white bg-blue-700 hover:bg-blue-800 font-medium rounded-full px-4 py-0 text-sm md:mr-3 md:py-2 md:text-[15px]"
+          >
+            Sign up
+          </button>
+          <Mode />
+          <button
+            onClick={handleToggle}
+            type="button"
+            className="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-gray-500 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
+            aria-expanded={isOpen}
+          >
+            <span className="sr-only">Open main menu</span>
+            <svg
+              className="w-5 h-5"
+              aria-hidden="true"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 17 14"
+            >
+              <path
+                stroke="currentColor"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M1 1h15M1 7h15M1 13h15"
+              />
+            </svg>
+          </button>
         </div>
-    );
+        <div
+          className={`absolute top-full right-0 mt-2 w-full md:w-auto md:flex md:items-center md:justify-between md:relative md:bg-background md:dark:bg-background ${
+            isOpen ? "block" : "hidden"
+          }`}
+          aria-expanded={isOpen}
+        >
+          <ul className="flex flex-col text-xl p-4 md:p-0 mt-2 text-right font-light rounded-lg md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0 bg-white dark:bg-background z-50">
+            {navItems.map((item, index) => (
+              <li key={index} className="relative group">
+                <Link
+                  to={item.to}
+                  className={`block py-2 px-3 rounded md:bg-transparent md:p-0 ${
+                    item.current
+                      ? " text-blue-700"
+                      : " dark:text-gray-300 hover:text-blue-700"
+                  }`}
+                  aria-current={item.current ? "page" : undefined}
+                >
+                  {item.label}
+                  {!item.current && (
+                    <span className="absolute left-0 bottom-0 w-full h-[2px] bg-blue-500 transform scale-x-0 transition-transform duration-300 ease-in-out group-hover:scale-x-100"></span>
+                  )}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </nav>
+  );
 };
