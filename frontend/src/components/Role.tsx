@@ -31,7 +31,7 @@ export const Role = ({ onRoleSelect }: RoleProps) => {
     <div className=" relative h-screen w-full flex justify-center items-center">
       <div className="p-8 rounded-lg">
         <div className="flex justify-center mb-8">
-          <h1 className="font-bold text-3xl  md:text-4xl text-center">Select your user Type</h1>
+          <h1 className="font-bold text-text text-3xl  md:text-4xl text-center">Select your user Type</h1>
         </div>
         <div className="flex justify-center gap-6">
           <motion.button
@@ -74,7 +74,7 @@ export const Role = ({ onRoleSelect }: RoleProps) => {
           <button
             type="button"
             onClick={handleContinueClick}
-            className=" bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 focus:outline-none"
+            className=" bg-blue-700 text-black hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-2 focus:outline-none"
           >
             Continue
           </button>
