@@ -10,7 +10,6 @@ export const Navbar = () => {
     setIsOpen(!isOpen);
   };
 
-  // Define the navigation items
   const navItems = [
     { to: "#", label: "Services", current: true },
     { to: "#", label: "Your Gains" },
@@ -27,12 +26,14 @@ export const Navbar = () => {
           </span>
         </a>
         <div className="flex md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse">
+        <Link to={"/signup"}>      
           <button
             type="button"
             className="text-white bg-blue-700 hover:bg-blue-800 font-medium rounded-full px-4 py-0 text-sm md:mr-3 md:py-2 md:text-[15px]"
-          >
+            >
             Sign up
           </button>
+            </Link>
           <Mode />
           <button
             onClick={handleToggle}

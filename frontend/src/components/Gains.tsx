@@ -58,7 +58,7 @@ export const Gains: React.FC = () => {
   const cardData = [
     {
       content: 'Fast Service Discovery',
-      imageUrl: './public/images/Discovery.png',
+      imageUrl: './images/Discovery.png',
       points: [
         'Quickly find and connect with the most relevant service providers, enhancing your service experience and saving time.'
       ],
@@ -66,7 +66,7 @@ export const Gains: React.FC = () => {
     },
     {
       content: 'Retail Expertise',
-      imageUrl: './public/images/Expertise.png',
+      imageUrl: '/images/Expertise.png',
       points: [
         'Enjoy a seamless and user-friendly interface that mimics a retail-like experience for finding and engaging with service providers.',
       ],
@@ -74,7 +74,7 @@ export const Gains: React.FC = () => {
     },
     {
       content: 'Save Time and Effort',
-      imageUrl: './public/images/Savetime.png',
+      imageUrl: '/images/Savetime.png',
       points: [
         'Efficiently manage your service requests and provider interactions, reducing the time and effort required to get the help you need.'
       ],
@@ -82,7 +82,7 @@ export const Gains: React.FC = () => {
     },
     {
       content: 'Instant Updates',
-      imageUrl: './public/images/Updates.png',
+      imageUrl: '/images/Updates.png',
       points: [
         'Receive real-time updates on your connections and interactions, ensuring you stay informed and can act promptly.'
       ],
