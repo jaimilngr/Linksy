@@ -107,3 +107,10 @@ body {
     }
   }
 }
+
+@media (max-width: 768px) {
+  .dot {
+    width: 2rem;
+    height: 2rem;
+  }
+}

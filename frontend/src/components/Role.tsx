@@ -31,7 +31,7 @@ export const Role = ({ onRoleSelect }: RoleProps) => {
     <div className=" relative h-screen w-full flex justify-center items-center">
       <div className="p-8 rounded-lg">
         <div className="flex justify-center mb-8">
-          <h1 className="font-bold text-text text-3xl  md:text-4xl text-center">Select your user Type</h1>
+          <h1 className="font-bold text-text text-3xl text-white  md:text-4xl text-center">Select your user Type</h1>
         </div>
         <div className="flex justify-center gap-6">
           <motion.button
@@ -49,7 +49,7 @@ export const Role = ({ onRoleSelect }: RoleProps) => {
               alt="User Icon"
               className="mb-2"
             />
-            <p className="text-center font-medium text-lg">User</p>
+            <p className="text-center font-medium text-black text-lg">User</p>
           </motion.button>
           <motion.button
             className={cardClasses("service")}
@@ -66,7 +66,7 @@ export const Role = ({ onRoleSelect }: RoleProps) => {
               alt="Service Icon"
               className="mb-2"
             />
-            <p className="text-center font-medium text-lg">Services</p>
+            <p className="text-center font-medium text-black text-lg">Services</p>
           </motion.button>
         
         </div>

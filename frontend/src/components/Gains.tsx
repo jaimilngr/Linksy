@@ -1,9 +1,10 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { gsap } from 'gsap';
 import ScrollTrigger from 'gsap/ScrollTrigger';
+import Draggable from 'gsap/Draggable';
 import '../styles.scss';
 
-gsap.registerPlugin(ScrollTrigger);
+gsap.registerPlugin(ScrollTrigger, Draggable);
 
 const Card: React.FC<{ content: string; imageUrl: string; points: string[], bgColor: string }> = ({ content, imageUrl, points, bgColor }) => {
   const [flipped, setFlipped] = React.useState(false);
@@ -40,8 +41,19 @@ const Card: React.FC<{ content: string; imageUrl: string; points: string[], bgCo
 };
 
 export const Gains: React.FC = () => {
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
   useEffect(() => {
-    gsap.to("#js-slideContainer", {
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  useEffect(() => {
+    const slideContainer = "#js-slideContainer";
+
+    // GSAP ScrollTrigger animation
+    gsap.to(slideContainer, {
       xPercent: -50 * (4 - 2),
       ease: "none",
       duration: 2,
@@ -53,7 +65,26 @@ export const Gains: React.FC = () => {
         scrub: 2,
       },
     });
-  }, []);
+
+    // GSAP Draggable functionality for mobile screens only
+    if (isMobile) {
+      Draggable.create(slideContainer, {
+        type: "x",
+        bounds: "#js-wrapper",
+        edgeResistance: 0.65,
+        throwProps: true,
+        onDrag: function() {
+          gsap.set(slideContainer, { x: this.x });
+        },
+        onThrowUpdate: function() {
+          gsap.set(slideContainer, { x: this.x });
+        }
+      });
+    } else {
+      //@ts-ignore
+      Draggable.get(slideContainer)?.forEach(draggable => draggable.kill());
+    }
+  }, [isMobile]);
 
   const cardData = [
     {
@@ -107,6 +138,14 @@ export const Gains: React.FC = () => {
             />
           ))}
         </div>
+      </div>
+      <div className='md:hidden flex mb-7'>
+        {cardData.map((_, index) => (
+          <div
+            key={index}
+            className='dot w-3 h-3 rounded-full mx-2 bg-gray-400'
+          />
+        ))}
       </div>
     </div>
   );
