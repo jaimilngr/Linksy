@@ -127,7 +127,7 @@ export const Gains: React.FC = () => {
         Your Gains
       </div>
       <div id="js-wrapper" className='relative overflow-hidden'>
-        <div id="js-slideContainer" className='flex'>
+        <div id="js-slideContainer" className='flex text-black'>
           {cardData.map((card, index) => (
             <Card
               key={index}
