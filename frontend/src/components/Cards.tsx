@@ -34,7 +34,7 @@ export const Cards = () => {
   const numberOfCardsToDisplay = window.innerWidth < 768 ? Math.min(cardData.length, 6) : cardData.length;
 
   return (
-    <div className="flex justify-center items-center flex-col bg-[#fff9f3] dark:bg-inherit mt-8 border-zinc-200 border-b-2 pb-10">
+    <div className="flex justify-center items-center flex-col  dark:bg-inherit mt-8 border-zinc-200 border-b-2 pb-10">
       <div className="text-4xl font-bold text-green-500">
         Browse Services
       </div>

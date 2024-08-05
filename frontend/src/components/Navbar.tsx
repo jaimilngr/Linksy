@@ -68,7 +68,7 @@ export const Navbar = () => {
           }`}
           aria-expanded={isOpen}
         >
-          <ul className="flex flex-col text-xl p-4 md:p-0  text-right font-light rounded-lg md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0 bg-white dark:bg-background z-50">
+          <ul className="flex flex-col text-xl p-4 md:p-0  text-right font-light rounded-lg md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0  dark:bg-background z-50">
             {navItems.map((item, index) => (
               <li key={index} className="relative group">
                 <Link
