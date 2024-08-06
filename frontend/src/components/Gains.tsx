@@ -6,8 +6,16 @@ import '../styles.scss';
 
 gsap.registerPlugin(ScrollTrigger, Draggable);
 
-const Card: React.FC<{ content: string; imageUrl: string; points: string[], bgColor: string }> = ({ content, imageUrl, points, bgColor }) => {
-  const [flipped, setFlipped] = React.useState(false);
+interface CardProps {
+  content: string;
+  imageUrl: string;
+  points: string[];
+  bgColor: string;
+}
+
+// Define Card component
+const Card: React.FC<CardProps> = ({ content, imageUrl, points, bgColor }) => {
+  const [flipped, setFlipped] = React.useState<boolean>(false);
 
   const flip = () => setFlipped(!flipped);
 
@@ -40,8 +48,16 @@ const Card: React.FC<{ content: string; imageUrl: string; points: string[], bgCo
   );
 };
 
+// Define type for card data
+interface CardData {
+  content: string;
+  imageUrl: string;
+  points: string[];
+  bgColor: string;
+}
+
 export const Gains: React.FC = () => {
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isMobile, setIsMobile] = useState<boolean>(window.innerWidth <= 768);
 
   useEffect(() => {
     const handleResize = () => setIsMobile(window.innerWidth <= 768);
@@ -51,14 +67,14 @@ export const Gains: React.FC = () => {
 
   useEffect(() => {
     const slideContainer = "#js-slideContainer";
+    const wrapper = "#js-wrapper";
 
-    // GSAP ScrollTrigger animation
     gsap.to(slideContainer, {
       xPercent: -50 * (4 - 2),
       ease: "none",
       duration: 2,
       scrollTrigger: {
-        trigger: "#js-wrapper",
+        trigger: wrapper,
         scroller: "body",
         start: "top 150px",
         end: `+= ${500 * 4}`,
@@ -66,11 +82,17 @@ export const Gains: React.FC = () => {
       },
     });
 
-    // GSAP Draggable functionality for mobile screens only
+    const draggables = Draggable.get(slideContainer);
+    if (draggables) {
+      if (Array.isArray(draggables)) {
+        draggables.forEach(draggable => draggable.kill());
+      } 
+    }
+
     if (isMobile) {
       Draggable.create(slideContainer, {
         type: "x",
-        bounds: "#js-wrapper",
+        bounds: wrapper,
         edgeResistance: 0.65,
         throwProps: true,
         onDrag: function() {
@@ -80,13 +102,11 @@ export const Gains: React.FC = () => {
           gsap.set(slideContainer, { x: this.x });
         }
       });
-    } else {
-      //@ts-ignore
-      Draggable.get(slideContainer)?.forEach(draggable => draggable.kill());
     }
+
   }, [isMobile]);
 
-  const cardData = [
+  const cardData: CardData[] = [
     {
       content: 'Fast Service Discovery',
       imageUrl: './images/Discovery.png',

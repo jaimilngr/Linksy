@@ -1,10 +1,10 @@
 export const Service = () =>{
     return <div className="flex flex-col md:flex-row md:p-10 justify-around">
             <div className="flex justify-center flex-col items-center md:w-5/12">
-                <div className=" text-2xl md:text-5xl font-semibold text-orange-400">
+                <div className=" text-3xl md:text-5xl font-semibold text-orange-400">
                     Start As Service Provider
                 </div>
-                <div className=" text-xl md:text-2xl p-10">
+                <div className=" text-xl p-5 md:text-2xl ">
                 Empower your business by listing your services with us. Our platform connects you with a diverse range of clients looking for skilled professionals like you. Highlight your expertise, set your availability, and start engaging with potential customers. Join today and take advantage of new opportunities to expand your reach!
 
 

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import "../index.css";
 import { Mode } from "./Mode";
-
+import { Link as ScrollLink } from "react-scroll";
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -11,9 +11,9 @@ export const Navbar = () => {
   };
 
   const navItems = [
-    { to: "#", label: "Services", current: true },
-    { to: "#", label: "Your Gains" },
-    { to: "#", label: "Process" },
+    { to: "/", label: "Services", current: true },
+    { to: "your-Gains", label: "Your Gains" },
+    { to: "process", label: "Process" },
     { to: "#", label: "FAQ" },
   ];
 
@@ -71,7 +71,7 @@ export const Navbar = () => {
           <ul className="flex flex-col text-xl p-4 md:p-0  text-right font-light rounded-lg md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0  dark:bg-background z-50">
             {navItems.map((item, index) => (
               <li key={index} className="relative group">
-                <Link
+                <ScrollLink
                   to={item.to}
                   className={`block py-2 px-3 rounded md:bg-transparent md:p-0 ${
                     item.current
@@ -84,7 +84,7 @@ export const Navbar = () => {
                   {!item.current && (
                     <span className="absolute left-0 bottom-0 w-full h-[2px] bg-blue-500 transform scale-x-0 transition-transform duration-300 ease-in-out group-hover:scale-x-100"></span>
                   )}
-                </Link>
+                </ScrollLink>
               </li>
             ))}
           </ul>
