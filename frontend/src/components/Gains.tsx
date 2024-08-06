@@ -13,7 +13,6 @@ interface CardProps {
   bgColor: string;
 }
 
-// Define Card component
 const Card: React.FC<CardProps> = ({ content, imageUrl, points, bgColor }) => {
   const [flipped, setFlipped] = React.useState<boolean>(false);
 
@@ -48,7 +47,6 @@ const Card: React.FC<CardProps> = ({ content, imageUrl, points, bgColor }) => {
   );
 };
 
-// Define type for card data
 interface CardData {
   content: string;
   imageUrl: string;

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 
-type RoleType = "user" | "service" | "admin";
+type RoleType = "user" | "service";
 
 interface RoleProps {
   onRoleSelect: (role: RoleType) => void;

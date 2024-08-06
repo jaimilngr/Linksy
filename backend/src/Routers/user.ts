@@ -14,6 +14,8 @@ export const authRouter = new Hono<{
 authRouter.post("/signup", async (c) => {
   const body = await c.req.json();
 
+  console.log("Received request body:", body);
+  
   const result = signupInput.safeParse(body);
   if (!result.success) {
     c.status(400);
@@ -33,8 +35,7 @@ authRouter.post("/signup", async (c) => {
           email: body.email,
           password: body.password,
           contactNo: body.contactNo,
-          type: body.type,
-          location: body.location
+          mode: body.mode ?? "offline",
         },
         select: {
           id: true,
@@ -64,8 +65,11 @@ authRouter.post("/signup", async (c) => {
     });
 
   } catch (e) {
-    c.status(403);
-    return c.text("User already exists with the same email");
+    console.error("Error creating user:", e); 
+    c.status(409);
+    return c.json({
+      error: "User already exists with the same email or contact number"
+    });
   }
 });
 

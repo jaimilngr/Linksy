@@ -5,24 +5,21 @@ export declare const signupInput: z.ZodObject<{
     name: z.ZodString;
     role: z.ZodString;
     contactNo: z.ZodString;
-    type: z.ZodOptional<z.ZodString>;
-    location: z.ZodOptional<z.ZodString>;
+    mode: z.ZodOptional<z.ZodEnum<["offline", "online"]>>;
 }, "strip", z.ZodTypeAny, {
     email: string;
     password: string;
     name: string;
     role: string;
     contactNo: string;
-    type?: string | undefined;
-    location?: string | undefined;
+    mode?: "offline" | "online" | undefined;
 }, {
     email: string;
     password: string;
     name: string;
     role: string;
     contactNo: string;
-    type?: string | undefined;
-    location?: string | undefined;
+    mode?: "offline" | "online" | undefined;
 }>;
 export type SignupType = z.infer<typeof signupInput>;
 export declare const signinInput: z.ZodObject<{

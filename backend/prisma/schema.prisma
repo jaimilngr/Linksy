@@ -21,14 +21,20 @@ model User {
   notifications     Notification[]
 }
 
+enum ServiceProviderMode {
+  offline
+  online
+}
+
 model ServiceProvider {
   id                Int            @id @default(autoincrement())
   email             String         @unique
   name              String
   password          String
   contactNo         String         @unique
-  type              String
-  location          String
+  type              String?
+  mode              ServiceProviderMode  
+  location          String?
   profileImageUrl   String?
   rating            Float          @default(0.0)
   reviews           Review[]

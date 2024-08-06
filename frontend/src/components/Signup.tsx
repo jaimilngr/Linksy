@@ -3,14 +3,14 @@ import { useState } from "react";
 import { BACKEND_URL } from "../config";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { SignupType  } from '@jaimil/linksy';
+import { SignupType } from "@jaimil/linksy";
 import { Role } from "./Role";
 
 interface SignUpProps {
   handleGoBack: () => void;
 }
 
-type RoleType = "user" | "service" | "admin";
+type RoleType = "user" | "service" ;
 
 const SignUp = ({ handleGoBack }: SignUpProps) => {
   const navigate = useNavigate();
@@ -19,15 +19,14 @@ const SignUp = ({ handleGoBack }: SignUpProps) => {
     contactNo: "",
     email: "",
     password: "",
-    type: "", 
-    location: "" 
+    mode: "",
   });
   const [selectedRole, setSelectedRole] = useState<RoleType | null>(null);
   const [showSignUp, setShowSignUp] = useState<boolean>(false);
 
   const handleRoleSelect = (role: RoleType) => {
     setSelectedRole(role);
-    setShowSignUp(true); 
+    setShowSignUp(true);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -37,10 +36,10 @@ const SignUp = ({ handleGoBack }: SignUpProps) => {
       return;
     }
     try {
-      const response = await axios.post(
-        `${BACKEND_URL}/api/v1/user/signup`,
-        { ...postInputs, role: selectedRole }
-      );
+      const response = await axios.post(`${BACKEND_URL}/api/v1/user/signup`, {
+        ...postInputs,
+        role: selectedRole,
+      });
       const { jwt, name, id } = response.data;
 
       localStorage.setItem("token", jwt);
@@ -75,48 +74,63 @@ const SignUp = ({ handleGoBack }: SignUpProps) => {
           <p className="font-sans text-4xl text-white font-bold mb-8 mt-5 md:text-5xl">
             Enter your details
           </p>
-          <form className="flex flex-col gap-4 w-full max-w-md px-10" onSubmit={handleSubmit}>
+          <form
+            className="flex flex-col gap-4 w-full max-w-md px-10"
+            onSubmit={handleSubmit}
+          >
             <input
               type="text"
               placeholder="Name"
               className="p-2 rounded bg-white text-gray-900"
-              onChange={(e) => setPostInputs((c: any) => ({ ...c, name: e.target.value }))}
+              onChange={(e) =>
+                setPostInputs((c: any) => ({ ...c, name: e.target.value }))
+              }
             />
             <input
               type="number"
               placeholder="Contact no"
               className="p-2 rounded bg-white text-gray-900"
-              onChange={(e) => setPostInputs((c: any) => ({ ...c, contactNo: e.target.value }))}
+              onChange={(e) =>
+                setPostInputs((c: any) => ({ ...c, contactNo: e.target.value }))
+              }
             />
             <input
               type="email"
               placeholder="Email"
               className="p-2 rounded bg-white text-gray-900"
-              onChange={(e) => setPostInputs((c: any) => ({ ...c, email: e.target.value }))}
+              onChange={(e) =>
+                setPostInputs((c: any) => ({ ...c, email: e.target.value }))
+              }
             />
             <input
               type="password"
               placeholder="Password"
               className="p-2 rounded bg-white text-gray-900"
-              onChange={(e) => setPostInputs((c: any) => ({ ...c, password: e.target.value }))}
+              onChange={(e) =>
+                setPostInputs((c: any) => ({ ...c, password: e.target.value }))
+              }
             />
-            {selectedRole === 'service' && (
+            {selectedRole === "service" && (
               <>
-                <input
-                  type="text"
-                  placeholder="Service Type"
-                  className="p-2 rounded bg-white text-gray-900"
-                  onChange={(e) => setPostInputs((c: any) => ({ ...c, type: e.target.value }))}
-                />
-                <input
-                  type="text"
-                  placeholder="Location"
-                  className="p-2 rounded bg-white text-gray-900"
-                  onChange={(e) => setPostInputs((c: any) => ({ ...c, location: e.target.value }))}
-                />
+                <select
+                  id="mode"
+                  className="text-gray-700 text-md rounded-lg block w-full p-2.5"
+                  onChange={(e) =>
+                    setPostInputs((prev: any) => ({
+                      ...prev,
+                      mode: e.target.value, 
+                    }))
+                  }
+                >
+                  <option value="" disabled selected>
+                    Select Preferred Mode of Service
+                  </option>
+                  <option value="offline">OFFLINE / ONSIGHT</option>
+                  <option value="online">ONLINE</option>
+                </select>
               </>
             )}
-            <p className="text-gray-50">Password must have 8 characters</p>
+            <p className="text-gray-50">Password must have 6 characters</p>
             <button
               type="submit"
               className="text-white bg-blue-600 border border-blue-700 hover:bg-blue-700 focus:ring-4 focus:ring-blue-500 font-medium rounded-full text-sm px-5 py-2.5"

@@ -1,3 +1,6 @@
+-- CreateEnum
+CREATE TYPE "ServiceProviderMode" AS ENUM ('offline', 'online');
+
 -- CreateTable
 CREATE TABLE "User" (
     "id" TEXT NOT NULL,
@@ -20,6 +23,7 @@ CREATE TABLE "ServiceProvider" (
     "password" TEXT NOT NULL,
     "contactNo" TEXT NOT NULL,
     "type" TEXT NOT NULL,
+    "mode" "ServiceProviderMode" NOT NULL,
     "location" TEXT NOT NULL,
     "profileImageUrl" TEXT,
     "rating" DOUBLE PRECISION NOT NULL DEFAULT 0.0,
@@ -39,7 +43,7 @@ CREATE TABLE "Service" (
     "description" TEXT,
     "price" DOUBLE PRECISION,
     "timing" TEXT,
-    "category" TEXT,
+    "category" TEXT NOT NULL,
     "images" TEXT[],
     "location" TEXT NOT NULL,
     "contactNo" TEXT NOT NULL,
