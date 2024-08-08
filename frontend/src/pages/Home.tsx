@@ -10,10 +10,10 @@ export const Home = () => {
     <div>
       <Navbar />
       <Hero />
+      <Cards />
       <div id="process">
         <Process />
       </div>
-      <Cards />
       <div id="your-Gains">
         <Gains />
       </div>

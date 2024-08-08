@@ -18,26 +18,30 @@ export const Navbar = () => {
   ];
 
   return (
-    <nav className="relative w-full z-20 top-0 start-0 border-b border-gray-400 bg-background dark:bg-background ">
-      <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto py-5 px-5">
+    <nav className="  z-20 top-0 start-0 border-b border-gray-400 bg-background dark:bg-background sticky ">
+      <div className=" flex flex-wrap items-center justify-between  py-5 px-6 ">
         <a href="/" className="flex items-center space-x-3 rtl:space-x-reverse">
           <span className="self-center text-2xl font-bold whitespace-nowrap sm:text-4xl">
             Linksy
           </span>
         </a>
         <div className="flex md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse">
+          <div className="self-center">
+
+        <Mode />
+          </div>
           <div className="">
 
         <Link to={"/signup"}>      
           <button
             type="button"
-            className="text-white bg-blue-700 hover:bg-blue-800 font-medium rounded-full px-4  text-sm md:mr-3 py-2 md:text-[15px]"
+            className="text-white bg-blue-700 hover:bg-blue-800 font-medium rounded-full px-4   text-md md:ml-3 py-2 md:text-[18px] "
             >
             Sign up
           </button>
             </Link>
               </div>
-          <Mode />
+          
           <button
             onClick={handleToggle}
             type="button"
@@ -68,7 +72,7 @@ export const Navbar = () => {
           }`}
           aria-expanded={isOpen}
         >
-          <ul className="flex flex-col text-xl p-4 md:p-0  text-right font-light rounded-lg md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0  dark:bg-background z-50">
+          <ul className="flex flex-col text-xl p-4 md:p-0 bg-background  text-right font-light rounded-lg md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0  dark:bg-background z-50">
             {navItems.map((item, index) => (
               <li key={index} className="relative group">
                 <ScrollLink
