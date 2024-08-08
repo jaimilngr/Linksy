@@ -7,7 +7,7 @@ import { Process } from "../components/process";
 
 export const Home = () => {
   return (
-    <div>
+    <div >
       <Navbar />
       <Hero />
       <Cards />
