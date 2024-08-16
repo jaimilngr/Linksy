@@ -1,13 +1,29 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import "../index.css";
 import { Mode } from "./Mode";
 import { Link as ScrollLink } from "react-scroll";
+import { useAuth } from '../Context/Authcontext';
+
+
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [lastScrollY, setLastScrollY] = useState(0);
+  const [showNavbar, setShowNavbar] = useState(true);
+  const navigate = useNavigate();
 
   const handleToggle = () => {
     setIsOpen(!isOpen);
+  };
+
+  const handleDropdownToggle = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+  };
+
+  const handleSignOut = () => {
+    signOut();
+    navigate("/"); 
   };
 
   const navItems = [
@@ -17,8 +33,31 @@ export const Navbar = () => {
     { to: "#", label: "FAQ" },
   ];
 
+  const authContext = useAuth();
+
+  if (!authContext) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  const { authUser, isLoggedIn, signOut } = authContext;
+
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > lastScrollY) {
+        setShowNavbar(false);
+      } else {
+        setShowNavbar(true);
+      }
+      setLastScrollY(window.scrollY);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [lastScrollY]);
+
   return (
-    <nav className="  z-20 top-0 start-0 border-b border-gray-400 bg-background dark:bg-background sticky ">
+    <nav className={`  z-20 top-0 start-0 border-b border-gray-400 bg-background dark:bg-background sticky transition-transform duration-300 ${showNavbar ? 'translate-y-0' : '-translate-y-full'}`}>
       <div className=" flex flex-wrap items-center justify-between  py-5 px-6 ">
         <a href="/" className="flex items-center space-x-3 rtl:space-x-reverse">
           <span className="self-center text-2xl font-bold whitespace-nowrap sm:text-4xl">
@@ -32,15 +71,46 @@ export const Navbar = () => {
           </div>
           <div className="">
 
-        <Link to={"/signup"}>      
-          <button
-            type="button"
-            className="text-white bg-blue-700 hover:bg-blue-800 font-medium rounded-full px-4   text-md md:ml-3 py-2 md:text-[18px] "
-            >
-            Sign up
+      {isLoggedIn ? (
+        <div className="relative">
+          <button onClick={handleDropdownToggle}>
+          <img id="avatarButton"   className="w-14 h-14 rounded-full cursor-pointer mx-3" src="https://img.icons8.com/stickers/100/user-male-circle.png" alt="User dropdown"/>
           </button>
-            </Link>
+          {isDropdownOpen && (
+                  <div className="absolute right-0 z-10 bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700 dark:divide-gray-600">
+                    <div className="px-4 py-3 text-sm text-gray-900 dark:text-white">
+                      <div>{authUser}</div>
+                    </div>
+                    <ul className="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="avatarButton">
+                      <li>
+                        <a href="#" className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Dashboard</a>
+                      </li>
+                      <li>
+                        <a href="#" className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Settings</a>
+                      </li>
+                      <li>
+                        <a href="#" className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Earnings</a>
+                      </li>
+                    </ul>
+                    <div className="py-1">
+                      <a href="#" onClick={handleSignOut} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white">Sign out</a>
+                    </div>
+                  </div>
+                )}
               </div>
+            ) : (
+              <Link to={"/signup"}>
+                <button
+                  type="button"
+                  className="text-white bg-blue-700 hover:bg-blue-800 font-medium rounded-full px-4 text-md md:ml-3 py-2 md:text-[18px]"
+                >
+                  Sign up
+                </button>
+              </Link>
+            )}
+          </div>
+    
+      
           
           <button
             onClick={handleToggle}

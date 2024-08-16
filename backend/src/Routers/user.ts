@@ -1,8 +1,9 @@
 import { PrismaClient } from "@prisma/client/edge";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { Hono } from "hono";
-import { sign } from "hono/jwt";
+import { sign, verify } from "hono/jwt";
 import { signupInput, signinInput } from '@jaimil/linksy';
+import cookie from 'cookie';
 
 export const authRouter = new Hono<{
   Bindings: {
@@ -10,6 +11,28 @@ export const authRouter = new Hono<{
     JWT_Secret: string;
   }
 }>();
+
+
+
+export const authMiddleware = async (c: any, next: () => Promise<void>) => {
+  const cookies = c.req.headers.get("Cookie") || "";
+  const token = cookies.split("; ").find((row: string) => row.startsWith('authToken='));
+
+  if (token) {
+    const tokenValue = token.split('=')[1];
+    try {
+      const payload = verify(tokenValue, c.env.JWT_Secret);
+      c.user = payload; 
+      await next(); 
+    } catch (e) {
+      c.status(401);
+      return c.json({ error: "Invalid token" });
+    }
+  } else {
+    c.status(401);
+    return c.json({ error: "Unauthorized" });
+  }
+};
 
 authRouter.post("/signup", async (c) => {
   const body = await c.req.json();
@@ -58,6 +81,16 @@ authRouter.post("/signup", async (c) => {
     }
 
     const token = await sign({ id: user.id }, c.env.JWT_Secret);
+
+    c.header("Set-Cookie", cookie.serialize('authToken', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', 
+      sameSite: 'strict',
+      path: '/',
+      maxAge: 3600 // 1 hour
+    }));
+
+
     return c.json({
       jwt: token,
       name: user.name,
@@ -119,6 +152,15 @@ authRouter.post("/signin", async (c) => {
   }
 
   const token = await sign({ id: user.id }, c.env.JWT_Secret);
+
+  c.header("Set-Cookie", cookie.serialize('authToken', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production', 
+    sameSite: 'strict',
+    path: '/',
+    maxAge: 3600 
+  }));
+
   return c.json({
     jwt: token,
     name: user.name,

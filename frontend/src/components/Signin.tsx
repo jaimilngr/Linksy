@@ -3,6 +3,8 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { BACKEND_URL } from "../config";
+import { useAuth } from "../Context/Authcontext";
+import Cookies from "js-cookie";
 
 interface SignInProps {
   handleGoBack: () => void;
@@ -12,6 +14,12 @@ const SignIn = ({ handleGoBack }: SignInProps) => {
   const navigate = useNavigate();
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const authContext = useAuth();
+
+  if (!authContext) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -20,17 +28,20 @@ const SignIn = ({ handleGoBack }: SignInProps) => {
         email,
         password,
       });
-      const { jwt, name, id } = response.data;
+      const { jwt , name } = response.data;
 
-      localStorage.setItem("token", jwt);
-      localStorage.setItem("username", name);
-      localStorage.setItem("uid", id);
+      Cookies.set('token', jwt, { expires: 10 });
+      Cookies.set('authUser', name, { expires: 10 });
+    
 
       navigate("/", { replace: true });
     } catch (e) {
       alert("Error while signing in");
     }
   };
+
+
+ 
 
   return (
     <motion.div
@@ -50,7 +61,10 @@ const SignIn = ({ handleGoBack }: SignInProps) => {
       <p className="font-sans text-5xl text-white font-bold mb-8 mt-5">
         Welcome Back
       </p>
-      <form className="flex flex-col gap-4 w-full max-w-md px-10" onSubmit={handleSubmit}>
+      <form
+        className="flex flex-col gap-4 w-full max-w-md px-10"
+        onSubmit={handleSubmit}
+      >
         <input
           type="email"
           placeholder="Email"

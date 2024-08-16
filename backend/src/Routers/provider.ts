@@ -16,7 +16,7 @@ interface ServiceCreateBody {
   description?: string;
   price?: number;
   timing?: string;
-  category?: string;
+  category: string;
   imageUrl: string;
   location: string;
   contactNo: string;

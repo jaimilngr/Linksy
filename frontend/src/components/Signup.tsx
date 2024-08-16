@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { SignupType } from "@jaimil/linksy";
 import { Role } from "./Role";
+import { useAuth } from "../Context/Authcontext";
+import Cookies from "js-cookie";
 
 interface SignUpProps {
   handleGoBack: () => void;
@@ -24,6 +26,14 @@ const SignUp = ({ handleGoBack }: SignUpProps) => {
   const [selectedRole, setSelectedRole] = useState<RoleType | null>(null);
   const [showSignUp, setShowSignUp] = useState<boolean>(false);
 
+  const authContext = useAuth();
+
+  if (!authContext) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  
+
+
   const handleRoleSelect = (role: RoleType) => {
     setSelectedRole(role);
     setShowSignUp(true);
@@ -40,11 +50,12 @@ const SignUp = ({ handleGoBack }: SignUpProps) => {
         ...postInputs,
         role: selectedRole,
       });
-      const { jwt, name, id } = response.data;
+      const { jwt, name } = response.data;
 
-      localStorage.setItem("token", jwt);
-      localStorage.setItem("username", name);
-      localStorage.setItem("uid", id);
+      
+      Cookies.set('token', jwt, { expires: 10 }); 
+      Cookies.set('authUser', name, { expires: 10 });
+
 
       navigate("/", { replace: true });
     } catch (e) {
