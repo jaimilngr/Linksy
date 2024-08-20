@@ -1,7 +1,8 @@
 export const Footer = () => {
     return (
-      <div className="flex flex-wrap justify-around bg-gradient-to-b from-blue-100 via-blue-200 to-gray-100 dark:bg-gradient-to-b dark:from-gray-900 dark:via-indigo-900 dark:to-blue-900 py-8 text-black">
-        {/* Brand Section */}
+<div className="flex flex-wrap justify-around bg-gradient-to-b from-blue-300 via-blue-500 to-blue-700 dark:bg-gradient-to-b dark:from-blue-500 dark:via-blue-700 dark:to-blue-900 py-8 ">
+
+{/* Brand Section */}
         <div>
           <h1 className="text-3xl font-bold">Linksy</h1>
           <p className="mt-3 max-w-xs">
@@ -82,7 +83,7 @@ export const Footer = () => {
               placeholder="Your Email"
               className="px-4 py-2 rounded-l-lg focus:outline-none"
             />
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-r-lg hover:bg-blue-500">
+            <button className="bg-red-600 text-white px-4 py-2 rounded-r-lg hover:bg-slate-500">
               Subscribe
             </button>
           </form>

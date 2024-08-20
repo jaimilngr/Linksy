@@ -1,9 +1,16 @@
 import { useState, useEffect } from "react";
 
 const slides = [
-  "/images/slide1.png", 
-  "/images/slide2.png",
-  "/images/slide3.png",
+  "/images/red.jpg", 
+  "/images/slide2.jpg",
+  "/images/purple.jpg",
+  "/images/slide4v2.jpg",
+
+  // "/images/slide1.jpg", 
+  // "/images/slide2.jpg",
+  // "/images/slide3.jpg",
+  // "/images/slide4.jpg",
+
 ];
 
 export function Slideshow() {

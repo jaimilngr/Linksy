@@ -12,12 +12,13 @@ export const Service = () =>{
 
                 Highlight your expertise, set your availability, and start engaging with potential customers. Join today and take advantage of new opportunities to expand your reach!
                 
-                <Link to="/signup">
+                
                 <div className="bg-blue-500 text-white rounded-md p-3 max-w-max mt-8 hover:bg-background hover:cursor-pointer hover:text-blue-500 hover:border-blue-700 border-2 dark:hover:text-white dark:border-2 dark:border-background dark:hover:border-blue-700">
+                <Link to="/signup">
                 <button>Become a provider</button>
+                </Link>
 
                 </div>
-                </Link>
                 </div>
               
             </div>
