@@ -1,4 +1,5 @@
 import { Cards } from "../components/Cards";
+import { Footer } from "../components/Footer";
 import Gains from "../components/Gains";
 import Hero from "../components/Hero";
 import { Service } from "../components/Listing";
@@ -18,6 +19,7 @@ export const Home = () => {
         <Gains />
       </div>
       <Service />
+      <Footer/>
     </div>
   );
 };
