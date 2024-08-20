@@ -14,6 +14,8 @@ interface SignUpProps {
 
 type RoleType = "user" | "service" ;
 
+
+
 const SignUp = ({ handleGoBack }: SignUpProps) => {
   const navigate = useNavigate();
   const [postInputs, setPostInputs] = useState<SignupType>({
@@ -21,8 +23,9 @@ const SignUp = ({ handleGoBack }: SignUpProps) => {
     contactNo: "",
     email: "",
     password: "",
-    mode: "",
+    mode: undefined, 
   });
+
   const [selectedRole, setSelectedRole] = useState<RoleType | null>(null);
   const [showSignUp, setShowSignUp] = useState<boolean>(false);
 
@@ -55,7 +58,10 @@ const SignUp = ({ handleGoBack }: SignUpProps) => {
       
       Cookies.set('token', jwt, { expires: 10 }); 
       Cookies.set('authUser', name, { expires: 10 });
+      Cookies.set('role', selectedRole, { expires: 10 });
 
+
+      localStorage.setItem('needsAdditionalData', 'true');
 
       navigate("/", { replace: true });
     } catch (e) {

@@ -1,10 +1,9 @@
 import { PrismaClient } from "@prisma/client/edge";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { Hono } from "hono";
-import { sign, verify } from "hono/jwt";
+import { jwt, sign, verify } from "hono/jwt";
 import { signupInput, signinInput } from '@jaimil/linksy';
 import cookie from 'cookie';
-
 export const authRouter = new Hono<{
   Bindings: {
     DATABASE_URL: string;
@@ -15,7 +14,7 @@ export const authRouter = new Hono<{
 
 
 export const authMiddleware = async (c: any, next: () => Promise<void>) => {
-  const cookies = c.req.headers.get("Cookie") || "";
+  const cookies = c.req.header("Cookie") || "";
   const token = cookies.split("; ").find((row: string) => row.startsWith('authToken='));
 
   if (token) {
@@ -87,7 +86,7 @@ authRouter.post("/signup", async (c) => {
       secure: process.env.NODE_ENV === 'production', 
       sameSite: 'strict',
       path: '/',
-      maxAge: 3600 // 1 hour
+      maxAge: 3600 
     }));
 
 
@@ -167,3 +166,54 @@ authRouter.post("/signin", async (c) => {
     id: user.id
   });
 });
+
+
+authRouter.post('/additional-data', async (c) => {
+  const prisma = new PrismaClient().$extends(withAccelerate());
+
+  try {
+    const authHeader = c.req.header('Authorization');
+    const token = authHeader?.split(' ')[1];
+
+    if (!token) {
+      return c.json({ error: 'No token provided' }, 401);
+    }
+
+    const secretKey = c.env.JWT_Secret; 
+    //@ts-ignore
+    const decodedToken = jwt.verify(token,secretKey);
+
+    const userId = decodedToken.id; 
+
+    const body = await c.req.json();
+
+    if (body.role === 'service') {
+      await prisma.serviceProvider.update({
+        where:{ id:userId},
+        data: {
+          location: `${body.latitude},${body.longitude}`,
+          //@ts-ignore
+          address: body.address,
+        },
+      });
+    } else {
+      await prisma.user.update({
+        where: { id: userId },
+        data: {
+          location: `${body.latitude},${body.longitude}`,
+                    //@ts-ignore
+
+          address: body.address,
+        },
+      });
+    }
+
+    return c.json({ success: true });
+  } catch (error) {
+    console.error('Error processing additional data:', error);
+    return c.json({ error: 'Failed to submit additional data' }, 500);
+  }
+});
+
+export default authRouter;
+

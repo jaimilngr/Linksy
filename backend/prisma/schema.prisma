@@ -15,6 +15,7 @@ model User {
   password          String
   contactNo         String
   location          String?
+  Address           String?
   services          Service[]      @relation("UserServices")
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
