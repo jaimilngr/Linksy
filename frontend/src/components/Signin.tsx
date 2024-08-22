@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { BACKEND_URL } from "../config";
-import { useAuth } from "../Context/Authcontext";
 
 interface SignInProps {
   handleGoBack: () => void;
@@ -14,12 +13,8 @@ const SignIn = ({ handleGoBack }: SignInProps) => {
   const navigate = useNavigate();
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
-  const authContext = useAuth();
 
-  if (!authContext) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  
+
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -27,7 +22,7 @@ const SignIn = ({ handleGoBack }: SignInProps) => {
        await axios.post(`${BACKEND_URL}/api/v1/user/signin`, {
         email,
         password,
-      },{withCredentials:true});
+      });
      
       navigate("/", { replace: true });
     } catch (e) {

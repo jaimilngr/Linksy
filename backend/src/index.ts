@@ -4,8 +4,11 @@ import { authRouter } from './Routers/user'
 import { serviceRouter } from './Routers/provider'
 
 const app = new Hono()
-app.use("/api/*", cors({
-    origin: 'http://localhost:5173',
+
+const allowedOrigins = ['http://localhost:5173', 'https://linksy.vercel.app'];
+
+app.use("*", cors({
+    origin: allowedOrigins,
     credentials: true, 
   }));
 app.route("/api/v1/user", authRouter)

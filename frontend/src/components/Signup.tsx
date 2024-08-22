@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { SignupType } from "@jaimil/linksy";
 import { Role } from "./Role";
-import { useAuth } from "../Context/Authcontext";
 
 interface SignUpProps {
   handleGoBack: () => void;
@@ -26,14 +25,7 @@ const SignUp = ({ handleGoBack }: SignUpProps) => {
   });
 
   const [selectedRole, setSelectedRole] = useState<RoleType | null>(null);
-  const [showSignUp, setShowSignUp] = useState<boolean>(false);
-
-  const authContext = useAuth();
-
-  if (!authContext) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  
+  const [showSignUp, setShowSignUp] = useState<boolean>(false);  
 
 
   const handleRoleSelect = (role: RoleType) => {
@@ -51,7 +43,7 @@ const SignUp = ({ handleGoBack }: SignUpProps) => {
        await axios.post(`${BACKEND_URL}/api/v1/user/signup`, {
         ...postInputs,
         role: selectedRole,
-      },{withCredentials:true});
+      });
    
 
       localStorage.setItem('needsAdditionalData', 'true');

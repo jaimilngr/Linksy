@@ -15,7 +15,7 @@ export const authRouter = new Hono<{
 
 authRouter.post("/signup", async (c) => {
   // Set CORS headers
-  c.res.headers.set('Access-Control-Allow-Origin', 'http://localhost:5173');
+  c.res.headers.set('Access-Control-Allow-Origin', 'https://linksy.vercel.app');
   c.res.headers.set('Access-Control-Allow-Credentials', 'true');
 
   const body = await c.req.json();
@@ -66,42 +66,23 @@ authRouter.post("/signup", async (c) => {
     const name = user.name;
     const role = body.role;
 
-    // Remove old cookies if they exist
-    setCookie(c, 'token', '', {
-      httpOnly: false,
-      secure: true,
-      sameSite: 'none',
-      expires: new Date(0),  // Set to past date to remove
-    });
-    setCookie(c, 'authUser', '', {
-      httpOnly: false,
-      secure: true,
-      sameSite: 'none',
-      expires: new Date(0),  // Set to past date to remove
-    });
-    setCookie(c, 'role', '', {
-      httpOnly: false,
-      secure: true,
-      sameSite: 'none',
-      expires: new Date(0),  // Set to past date to remove
-    });
 
     // Set new cookies
     setCookie(c, 'token', token, {
       httpOnly: false,
-      secure: true,
+      secure: false,
       sameSite: 'none',
       expires: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
     });
     setCookie(c, 'authUser', name, {
       httpOnly: false,
-      secure: true,
+      secure: false,
       sameSite: 'none',
       expires: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
     });
     setCookie(c, 'role', role, {
       httpOnly: false,
-      secure: true,
+      secure: false,
       sameSite: 'none',
       expires: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
     });
@@ -117,8 +98,7 @@ authRouter.post("/signup", async (c) => {
 });
 
 authRouter.post("/signin", async (c) => {
-  // Set CORS headers
-  c.res.headers.set('Access-Control-Allow-Origin', 'http://localhost:5173');
+  c.res.headers.set('Access-Control-Allow-Origin', 'https://linksy.vercel.app');
   c.res.headers.set('Access-Control-Allow-Credentials', 'true');
 
   const body = await c.req.json();
@@ -172,42 +152,22 @@ authRouter.post("/signin", async (c) => {
   const token = await sign({ id: user.id }, c.env.JWT_Secret);
   const name = user.name;
 
-  // Remove old cookies if they exist
-  setCookie(c, 'token', '', {
-    httpOnly: false,
-    secure: true,
-    sameSite: 'none',
-    expires: new Date(0),  // Set to past date to remove
-  });
-  setCookie(c, 'authUser', '', {
-    httpOnly: false,
-    secure: true,
-    sameSite: 'none',
-    expires: new Date(0),  // Set to past date to remove
-  });
-  setCookie(c, 'role', '', {
-    httpOnly: false,
-    secure: true,
-    sameSite: 'none',
-    expires: new Date(0),  // Set to past date to remove
-  });
 
-  // Set new cookies
   setCookie(c, 'token', token, {
     httpOnly: false,
-    secure: true,
+    secure: false,
     sameSite: 'none',
     expires: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
   });
   setCookie(c, 'authUser', name, {
     httpOnly: false,
-    secure: true,
+    secure: false,
     sameSite: 'none',
     expires: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
   });
   setCookie(c, 'role', role, {
     httpOnly: false,
-    secure: true,
+    secure: false,
     sameSite: 'none',
     expires: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
   });
