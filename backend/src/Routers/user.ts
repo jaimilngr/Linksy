@@ -5,7 +5,6 @@ import { sign, verify } from "hono/jwt";
 import { signupInput, signinInput } from '@jaimil/linksy';
 import { getCookie, setCookie } from 'hono/cookie';
 
-// Create a new Hono router
 export const authRouter = new Hono<{
   Bindings: {
     DATABASE_URL: string;
@@ -15,7 +14,7 @@ export const authRouter = new Hono<{
 
 authRouter.post("/signup", async (c) => {
   // Set CORS headers
-  c.res.headers.set('Access-Control-Allow-Origin','https://linksy.vercel.app');
+  c.res.headers.set('Access-Control-Allow-Origin', 'https://linksy.vercel.app');
   c.res.headers.set('Access-Control-Allow-Credentials', 'true');
 
   const body = await c.req.json();
@@ -66,24 +65,23 @@ authRouter.post("/signup", async (c) => {
     const name = user.name;
     const role = body.role;
 
-
     // Set new cookies
     setCookie(c, 'token', token, {
-      httpOnly: false,
+      httpOnly: true, // Secure for HttpOnly cookies
       secure: true,
-      sameSite: 'none',
+      sameSite: 'None',
       expires: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
     });
     setCookie(c, 'authUser', name, {
       httpOnly: false,
       secure: true,
-      sameSite: 'none',
+      sameSite: 'None',
       expires: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
     });
     setCookie(c, 'role', role, {
       httpOnly: false,
       secure: true,
-      sameSite: 'none',
+      sameSite: 'None',
       expires: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
     });
 
@@ -152,23 +150,22 @@ authRouter.post("/signin", async (c) => {
   const token = await sign({ id: user.id }, c.env.JWT_Secret);
   const name = user.name;
 
-
   setCookie(c, 'token', token, {
-    httpOnly: false,
+    httpOnly: true,
     secure: true,
-    sameSite: 'none',
+    sameSite: 'None',
     expires: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
   });
   setCookie(c, 'authUser', name, {
     httpOnly: false,
     secure: true,
-    sameSite: 'none',
+    sameSite: 'None',
     expires: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
   });
   setCookie(c, 'role', role, {
     httpOnly: false,
     secure: true,
-    sameSite: 'none',
+    sameSite: 'None',
     expires: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
   });
 
@@ -179,7 +176,7 @@ authRouter.post('/additional-data', async (c) => {
   const prisma = new PrismaClient().$extends(withAccelerate());
 
   try {
-    const token = getCookie(c,'token', 'secure')
+    const token = getCookie(c,'token', 'secure');
 
     if (!token) {
       return c.json({ error: 'No token provided' }, 401);
