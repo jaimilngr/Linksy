@@ -43,7 +43,7 @@ const SignUp = ({ handleGoBack }: SignUpProps) => {
        await axios.post(`${BACKEND_URL}/api/v1/user/signup`, {
         ...postInputs,
         role: selectedRole,
-      });
+      },{withCredentials:true});
    
 
       localStorage.setItem('needsAdditionalData', 'true');

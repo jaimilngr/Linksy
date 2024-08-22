@@ -22,7 +22,7 @@ const SignIn = ({ handleGoBack }: SignInProps) => {
        await axios.post(`${BACKEND_URL}/api/v1/user/signin`, {
         email,
         password,
-      });
+      },{withCredentials: true});
      
       navigate("/", { replace: true });
     } catch (e) {

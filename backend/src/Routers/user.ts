@@ -15,7 +15,7 @@ export const authRouter = new Hono<{
 
 authRouter.post("/signup", async (c) => {
   // Set CORS headers
-  c.res.headers.set('Access-Control-Allow-Origin', 'https://linksy.vercel.app');
+  c.res.headers.set('Access-Control-Allow-Origin','https://linksy.vercel.app');
   c.res.headers.set('Access-Control-Allow-Credentials', 'true');
 
   const body = await c.req.json();
@@ -70,19 +70,19 @@ authRouter.post("/signup", async (c) => {
     // Set new cookies
     setCookie(c, 'token', token, {
       httpOnly: false,
-      secure: false,
+      secure: true,
       sameSite: 'none',
       expires: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
     });
     setCookie(c, 'authUser', name, {
       httpOnly: false,
-      secure: false,
+      secure: true,
       sameSite: 'none',
       expires: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
     });
     setCookie(c, 'role', role, {
       httpOnly: false,
-      secure: false,
+      secure: true,
       sameSite: 'none',
       expires: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
     });
@@ -155,19 +155,19 @@ authRouter.post("/signin", async (c) => {
 
   setCookie(c, 'token', token, {
     httpOnly: false,
-    secure: false,
+    secure: true,
     sameSite: 'none',
     expires: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
   });
   setCookie(c, 'authUser', name, {
     httpOnly: false,
-    secure: false,
+    secure: true,
     sameSite: 'none',
     expires: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
   });
   setCookie(c, 'role', role, {
     httpOnly: false,
-    secure: false,
+    secure: true,
     sameSite: 'none',
     expires: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
   });
