@@ -6,7 +6,6 @@ import axios from "axios";
 import { SignupType } from "@jaimil/linksy";
 import { Role } from "./Role";
 import { useAuth } from "../Context/Authcontext";
-import Cookies from "js-cookie";
 
 interface SignUpProps {
   handleGoBack: () => void;
@@ -49,7 +48,7 @@ const SignUp = ({ handleGoBack }: SignUpProps) => {
       return;
     }
     try {
-      const response = await axios.post(`${BACKEND_URL}/api/v1/user/signup`, {
+       await axios.post(`${BACKEND_URL}/api/v1/user/signup`, {
         ...postInputs,
         role: selectedRole,
       },{withCredentials:true});
