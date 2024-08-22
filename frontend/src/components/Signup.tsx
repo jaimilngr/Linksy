@@ -52,14 +52,8 @@ const SignUp = ({ handleGoBack }: SignUpProps) => {
       const response = await axios.post(`${BACKEND_URL}/api/v1/user/signup`, {
         ...postInputs,
         role: selectedRole,
-      });
-      const { jwt, name } = response.data;
-
-      
-      Cookies.set('token', jwt, { expires: 10 }); 
-      Cookies.set('authUser', name, { expires: 10 });
-      Cookies.set('role', selectedRole, { expires: 10 });
-
+      },{withCredentials:true});
+   
 
       localStorage.setItem('needsAdditionalData', 'true');
 

@@ -4,11 +4,11 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { BACKEND_URL } from "../config";
 import { useAuth } from "../Context/Authcontext";
-import Cookies from "js-cookie";
 
 interface SignInProps {
   handleGoBack: () => void;
 }
+
 
 const SignIn = ({ handleGoBack }: SignInProps) => {
   const navigate = useNavigate();
@@ -24,16 +24,11 @@ const SignIn = ({ handleGoBack }: SignInProps) => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      const response = await axios.post(`${BACKEND_URL}/api/v1/user/signin`, {
+       await axios.post(`${BACKEND_URL}/api/v1/user/signin`, {
         email,
         password,
-      });
-      const { jwt , name } = response.data;
-
-      Cookies.set('token', jwt, { expires: 10 });
-      Cookies.set('authUser', name, { expires: 10 });
-    
-
+      },{withCredentials:true});
+     
       navigate("/", { replace: true });
     } catch (e) {
       alert("Error while signing in");

@@ -24,6 +24,7 @@ export const Navbar = () => {
   const handleSignOut = () => {
     signOut();
     navigate("/"); 
+    localStorage.removeItem("needsAdditionalData");
   };
 
   const navItems = [

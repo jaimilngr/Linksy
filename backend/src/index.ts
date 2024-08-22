@@ -4,8 +4,10 @@ import { authRouter } from './Routers/user'
 import { serviceRouter } from './Routers/provider'
 
 const app = new Hono()
-app.use("/*" ,cors())
-
+app.use("/api/*", cors({
+    origin: 'http://localhost:5173',
+    credentials: true, 
+  }));
 app.route("/api/v1/user", authRouter)
 app.route("/api/v1/provider", serviceRouter)
 

@@ -1,9 +1,11 @@
 import { PrismaClient } from "@prisma/client/edge";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { Hono } from "hono";
-import { jwt, sign, verify } from "hono/jwt";
+import { sign, verify } from "hono/jwt";
 import { signupInput, signinInput } from '@jaimil/linksy';
-import cookie from 'cookie';
+import { getCookie, setCookie } from 'hono/cookie';
+
+// Create a new Hono router
 export const authRouter = new Hono<{
   Bindings: {
     DATABASE_URL: string;
@@ -11,33 +13,14 @@ export const authRouter = new Hono<{
   }
 }>();
 
-
-
-export const authMiddleware = async (c: any, next: () => Promise<void>) => {
-  const cookies = c.req.header("Cookie") || "";
-  const token = cookies.split("; ").find((row: string) => row.startsWith('authToken='));
-
-  if (token) {
-    const tokenValue = token.split('=')[1];
-    try {
-      const payload = verify(tokenValue, c.env.JWT_Secret);
-      c.user = payload; 
-      await next(); 
-    } catch (e) {
-      c.status(401);
-      return c.json({ error: "Invalid token" });
-    }
-  } else {
-    c.status(401);
-    return c.json({ error: "Unauthorized" });
-  }
-};
-
 authRouter.post("/signup", async (c) => {
-  const body = await c.req.json();
+  // Set CORS headers
+  c.res.headers.set('Access-Control-Allow-Origin', 'http://localhost:5173');
+  c.res.headers.set('Access-Control-Allow-Credentials', 'true');
 
+  const body = await c.req.json();
   console.log("Received request body:", body);
-  
+
   const result = signupInput.safeParse(body);
   if (!result.success) {
     c.status(400);
@@ -80,24 +63,52 @@ authRouter.post("/signup", async (c) => {
     }
 
     const token = await sign({ id: user.id }, c.env.JWT_Secret);
+    const name = user.name;
+    const role = body.role;
 
-    c.header("Set-Cookie", cookie.serialize('authToken', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', 
-      sameSite: 'strict',
-      path: '/',
-      maxAge: 3600 
-    }));
-
-
-    return c.json({
-      jwt: token,
-      name: user.name,
-      id: user.id
+    // Remove old cookies if they exist
+    setCookie(c, 'token', '', {
+      httpOnly: false,
+      secure: true,
+      sameSite: 'none',
+      expires: new Date(0),  // Set to past date to remove
+    });
+    setCookie(c, 'authUser', '', {
+      httpOnly: false,
+      secure: true,
+      sameSite: 'none',
+      expires: new Date(0),  // Set to past date to remove
+    });
+    setCookie(c, 'role', '', {
+      httpOnly: false,
+      secure: true,
+      sameSite: 'none',
+      expires: new Date(0),  // Set to past date to remove
     });
 
+    // Set new cookies
+    setCookie(c, 'token', token, {
+      httpOnly: false,
+      secure: true,
+      sameSite: 'none',
+      expires: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
+    });
+    setCookie(c, 'authUser', name, {
+      httpOnly: false,
+      secure: true,
+      sameSite: 'none',
+      expires: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
+    });
+    setCookie(c, 'role', role, {
+      httpOnly: false,
+      secure: true,
+      sameSite: 'none',
+      expires: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
+    });
+
+    return c.json({ message: 'User created' });
   } catch (e) {
-    console.error("Error creating user:", e); 
+    console.error("Error creating user:", e);
     c.status(409);
     return c.json({
       error: "User already exists with the same email or contact number"
@@ -106,6 +117,10 @@ authRouter.post("/signup", async (c) => {
 });
 
 authRouter.post("/signin", async (c) => {
+  // Set CORS headers
+  c.res.headers.set('Access-Control-Allow-Origin', 'http://localhost:5173');
+  c.res.headers.set('Access-Control-Allow-Credentials', 'true');
+
   const body = await c.req.json();
 
   const result = signinInput.safeParse(body);
@@ -119,6 +134,8 @@ authRouter.post("/signin", async (c) => {
   }).$extends(withAccelerate());
 
   let user;
+  let role;
+
   user = await prisma.user.findUnique({
     where: {
       email: body.email,
@@ -130,7 +147,9 @@ authRouter.post("/signin", async (c) => {
     }
   });
 
-  if (!user) {
+  if (user) {
+    role = "user";
+  } else {
     user = await prisma.serviceProvider.findUnique({
       where: {
         email: body.email,
@@ -141,59 +160,87 @@ authRouter.post("/signin", async (c) => {
         name: true
       }
     });
-  }
 
-  if (!user) {
-    c.status(403);
-    return c.json({
-      error: "User not found"
-    });
+    if (user) {
+      role = 'service';
+    } else {
+      c.status(403);
+      return c.json({ error: "User not found" });
+    }
   }
 
   const token = await sign({ id: user.id }, c.env.JWT_Secret);
+  const name = user.name;
 
-  c.header("Set-Cookie", cookie.serialize('authToken', token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production', 
-    sameSite: 'strict',
-    path: '/',
-    maxAge: 3600 
-  }));
-
-  return c.json({
-    jwt: token,
-    name: user.name,
-    id: user.id
+  // Remove old cookies if they exist
+  setCookie(c, 'token', '', {
+    httpOnly: false,
+    secure: true,
+    sameSite: 'none',
+    expires: new Date(0),  // Set to past date to remove
   });
-});
+  setCookie(c, 'authUser', '', {
+    httpOnly: false,
+    secure: true,
+    sameSite: 'none',
+    expires: new Date(0),  // Set to past date to remove
+  });
+  setCookie(c, 'role', '', {
+    httpOnly: false,
+    secure: true,
+    sameSite: 'none',
+    expires: new Date(0),  // Set to past date to remove
+  });
 
+  // Set new cookies
+  setCookie(c, 'token', token, {
+    httpOnly: false,
+    secure: true,
+    sameSite: 'none',
+    expires: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
+  });
+  setCookie(c, 'authUser', name, {
+    httpOnly: false,
+    secure: true,
+    sameSite: 'none',
+    expires: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
+  });
+  setCookie(c, 'role', role, {
+    httpOnly: false,
+    secure: true,
+    sameSite: 'none',
+    expires: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
+  });
+
+  return c.json({ message: 'User found' });
+});
 
 authRouter.post('/additional-data', async (c) => {
   const prisma = new PrismaClient().$extends(withAccelerate());
 
   try {
-    const authHeader = c.req.header('Authorization');
-    const token = authHeader?.split(' ')[1];
+    const token = getCookie(c,'token', 'secure')
 
     if (!token) {
       return c.json({ error: 'No token provided' }, 401);
     }
 
-    const secretKey = c.env.JWT_Secret; 
-    //@ts-ignore
-    const decodedToken = jwt.verify(token,secretKey);
+    const secretKey = c.env.JWT_Secret;
+    const decodedToken = await verify(token, secretKey);
 
-    const userId = decodedToken.id; 
+    const userId = decodedToken.id as string;
+    const role = getCookie(c,'role', 'secure');
 
     const body = await c.req.json();
 
-    if (body.role === 'service') {
+    if (role === 'service') {
       await prisma.serviceProvider.update({
-        where:{ id:userId},
+        //@ts-ignore
+        where: { id: userId },
         data: {
           location: `${body.latitude},${body.longitude}`,
           //@ts-ignore
-          address: body.address,
+          Address: body.address,
         },
       });
     } else {
@@ -201,9 +248,7 @@ authRouter.post('/additional-data', async (c) => {
         where: { id: userId },
         data: {
           location: `${body.latitude},${body.longitude}`,
-                    //@ts-ignore
-
-          address: body.address,
+          Address: body.address,
         },
       });
     }
@@ -216,4 +261,3 @@ authRouter.post('/additional-data', async (c) => {
 });
 
 export default authRouter;
-
