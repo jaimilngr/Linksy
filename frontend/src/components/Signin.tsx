@@ -3,21 +3,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { BACKEND_URL } from "../config";
-
-axios.interceptors.response.use(
-  (response) => {
-    const cookies = response.headers['set-cookie'];
-    if (cookies) {
-      cookies.forEach(cookie => {
-        document.cookie = cookie;
-      });
-    }
-    return response;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+import Cookies from "js-cookie";
 
 interface SignInProps {
   handleGoBack: () => void;
@@ -31,15 +17,18 @@ const SignIn = ({ handleGoBack }: SignInProps) => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      await axios.post(`${BACKEND_URL}/api/v1/user/signin`, {
+      const response = await axios.post(`${BACKEND_URL}/api/v1/user/signin`, {
         email,
         password,
-      }, {
-        withCredentials: true,
-        headers: {
-          'Content-Type': 'application/json',
-        }
       });
+
+      const { jwt, name, role } = response.data;
+      
+      Cookies.set('token', jwt, { expires: 10 });
+      Cookies.set('authUser', name, { expires: 10 });
+      Cookies.set('role', role, { expires: 10 });
+
+
       navigate("/", { replace: true });
     } catch (e) {
       alert("Error while signing in");
@@ -57,7 +46,7 @@ const SignIn = ({ handleGoBack }: SignInProps) => {
     >
       <button
         onClick={handleGoBack}
-        className="text-white text-4xl border-2 border-red-500 rounded-full w-12 h-12 flex items-center justify-center hover:border-blue-500 hover:text-blue-500 transition-colors duration-300 "
+        className="text-white text-4xl border-2 border-red-500 rounded-full w-12 h-12 flex items-center justify-center hover:border-blue-500 hover:text-blue-500 transition-colors duration-300"
       >
         &times;
       </button>

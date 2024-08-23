@@ -8,6 +8,7 @@ import { Navbar } from "../components/Navbar";
 import { Process } from "../components/process";
 import { Add_Data } from "../components/Add_data";
 import { BACKEND_URL } from "../config";
+import Cookies from "js-cookie";
 import axios from "axios";
 
 export const Home = () => {
@@ -22,14 +23,18 @@ export const Home = () => {
 
   const AdditionalData = async (data: any) => {
     try {
-
+      const token = Cookies.get('token');
+      const role = Cookies.get('role');
       
       const payload = {
         ...data,
-  
+        role, 
+        token,
       };
   
-      await axios.post(`${BACKEND_URL}/api/v1/user/additional-data`, payload, {  withCredentials: true});
+      await axios.post(`${BACKEND_URL}/api/v1/user/additional-data`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
   
       localStorage.removeItem('needsAdditionalData'); 
       setShowModal(false);

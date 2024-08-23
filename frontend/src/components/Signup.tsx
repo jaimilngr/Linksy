@@ -5,29 +5,16 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { SignupType } from "@jaimil/linksy";
 import { Role } from "./Role";
-
-// Set up Axios interceptor to handle cookies
-axios.interceptors.response.use(
-  (response) => {
-    const cookies = response.headers['set-cookie'];
-    if (cookies) {
-      cookies.forEach(cookie => {
-        // Manually set cookies in the browser
-        document.cookie = cookie;
-      });
-    }
-    return response;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+import { useAuth } from "../Context/Authcontext";
+import Cookies from "js-cookie";
 
 interface SignUpProps {
   handleGoBack: () => void;
 }
 
-type RoleType = "user" | "service";
+type RoleType = "user" | "service" ;
+
+
 
 const SignUp = ({ handleGoBack }: SignUpProps) => {
   const navigate = useNavigate();
@@ -36,11 +23,19 @@ const SignUp = ({ handleGoBack }: SignUpProps) => {
     contactNo: "",
     email: "",
     password: "",
-    mode: undefined,
+    mode: undefined, 
   });
 
   const [selectedRole, setSelectedRole] = useState<RoleType | null>(null);
   const [showSignUp, setShowSignUp] = useState<boolean>(false);
+
+  const authContext = useAuth();
+
+  if (!authContext) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  
+
 
   const handleRoleSelect = (role: RoleType) => {
     setSelectedRole(role);
@@ -54,17 +49,20 @@ const SignUp = ({ handleGoBack }: SignUpProps) => {
       return;
     }
     try {
-      await axios.post(`${BACKEND_URL}/api/v1/user/signup`, {
+      const response = await axios.post(`${BACKEND_URL}/api/v1/user/signup`, {
         ...postInputs,
         role: selectedRole,
-      }, {
-        withCredentials: true,
-        headers: {
-          'Content-Type': 'application/json',
-        }
       });
+      const { jwt, name } = response.data;
+
+      
+      Cookies.set('token', jwt, { expires: 10 }); 
+      Cookies.set('authUser', name, { expires: 10 });
+      Cookies.set('role', selectedRole, { expires: 10 });
+
 
       localStorage.setItem('needsAdditionalData', 'true');
+
       navigate("/", { replace: true });
     } catch (e) {
       alert("Error while signing up");
@@ -137,7 +135,7 @@ const SignUp = ({ handleGoBack }: SignUpProps) => {
                   onChange={(e) =>
                     setPostInputs((prev: any) => ({
                       ...prev,
-                      mode: e.target.value,
+                      mode: e.target.value, 
                     }))
                   }
                 >
