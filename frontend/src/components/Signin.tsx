@@ -4,40 +4,47 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { BACKEND_URL } from "../config";
 
+axios.interceptors.response.use(
+  (response) => {
+    const cookies = response.headers['set-cookie'];
+    if (cookies) {
+      cookies.forEach(cookie => {
+        document.cookie = cookie;
+      });
+    }
+    return response;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 interface SignInProps {
   handleGoBack: () => void;
 }
-
 
 const SignIn = ({ handleGoBack }: SignInProps) => {
   const navigate = useNavigate();
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
 
-
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-       await axios.post(`${BACKEND_URL}/api/v1/user/signin`, {
+      await axios.post(`${BACKEND_URL}/api/v1/user/signin`, {
         email,
         password,
-      },{withCredentials: true,
-
+      }, {
+        withCredentials: true,
         headers: {
-          'Content-Type': 'application/json', 
-      }
-    }
-      );
-     
+          'Content-Type': 'application/json',
+        }
+      });
       navigate("/", { replace: true });
     } catch (e) {
       alert("Error while signing in");
     }
   };
-
-
- 
 
   return (
     <motion.div

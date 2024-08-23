@@ -65,9 +65,8 @@ authRouter.post("/signup", async (c) => {
     const name = user.name;
     const role = body.role;
 
-    // Set new cookies
     setCookie(c, 'token', token, {
-      httpOnly: true, // Secure for HttpOnly cookies
+      httpOnly: false,
       secure: true,
       sameSite: 'None',
       expires: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
@@ -151,7 +150,7 @@ authRouter.post("/signin", async (c) => {
   const name = user.name;
 
   setCookie(c, 'token', token, {
-    httpOnly: true,
+    httpOnly: false,
     secure: true,
     sameSite: 'None',
     expires: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),

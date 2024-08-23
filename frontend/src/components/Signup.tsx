@@ -6,13 +6,28 @@ import axios from "axios";
 import { SignupType } from "@jaimil/linksy";
 import { Role } from "./Role";
 
+// Set up Axios interceptor to handle cookies
+axios.interceptors.response.use(
+  (response) => {
+    const cookies = response.headers['set-cookie'];
+    if (cookies) {
+      cookies.forEach(cookie => {
+        // Manually set cookies in the browser
+        document.cookie = cookie;
+      });
+    }
+    return response;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 interface SignUpProps {
   handleGoBack: () => void;
 }
 
-type RoleType = "user" | "service" ;
-
-
+type RoleType = "user" | "service";
 
 const SignUp = ({ handleGoBack }: SignUpProps) => {
   const navigate = useNavigate();
@@ -21,12 +36,11 @@ const SignUp = ({ handleGoBack }: SignUpProps) => {
     contactNo: "",
     email: "",
     password: "",
-    mode: undefined, 
+    mode: undefined,
   });
 
   const [selectedRole, setSelectedRole] = useState<RoleType | null>(null);
-  const [showSignUp, setShowSignUp] = useState<boolean>(false);  
-
+  const [showSignUp, setShowSignUp] = useState<boolean>(false);
 
   const handleRoleSelect = (role: RoleType) => {
     setSelectedRole(role);
@@ -40,19 +54,17 @@ const SignUp = ({ handleGoBack }: SignUpProps) => {
       return;
     }
     try {
-       await axios.post(`${BACKEND_URL}/api/v1/user/signup`, {
+      await axios.post(`${BACKEND_URL}/api/v1/user/signup`, {
         ...postInputs,
         role: selectedRole,
-      },{withCredentials: true,
-
+      }, {
+        withCredentials: true,
         headers: {
-          'Content-Type': 'application/json', 
-      }
-    });
-   
+          'Content-Type': 'application/json',
+        }
+      });
 
       localStorage.setItem('needsAdditionalData', 'true');
-
       navigate("/", { replace: true });
     } catch (e) {
       alert("Error while signing up");
@@ -125,7 +137,7 @@ const SignUp = ({ handleGoBack }: SignUpProps) => {
                   onChange={(e) =>
                     setPostInputs((prev: any) => ({
                       ...prev,
-                      mode: e.target.value, 
+                      mode: e.target.value,
                     }))
                   }
                 >
