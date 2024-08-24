@@ -31,11 +31,14 @@ export const Home = () => {
         role, 
         token,
       };
-  
+      
+      if(role == 'user'){
       await axios.post(`${BACKEND_URL}/api/v1/user/additional-data`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
-  
+      
+    }
+   
       localStorage.removeItem('needsAdditionalData'); 
       setShowModal(false);
     } catch (error) {

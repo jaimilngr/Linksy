@@ -4,13 +4,15 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { BACKEND_URL } from "../config";
 import Cookies from "js-cookie";
+import { useAuth } from "../Context/Authcontext";
 
 interface SignInProps {
   handleGoBack: () => void;
 }
 
-const SignIn = ({ handleGoBack }: SignInProps) => {
+const SignIn: React.FC<SignInProps> = ({ handleGoBack }) => {
   const navigate = useNavigate();
+  const { setAuthState } = useAuth();
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
 
@@ -23,14 +25,20 @@ const SignIn = ({ handleGoBack }: SignInProps) => {
       });
 
       const { jwt, name, role } = response.data;
-      
+
       Cookies.set('token', jwt, { expires: 10 });
       Cookies.set('authUser', name, { expires: 10 });
       Cookies.set('role', role, { expires: 10 });
 
+      setAuthState({
+        authUser: name,
+        isLoggedIn: true,
+        role,
+      });
 
       navigate("/", { replace: true });
-    } catch (e) {
+    } catch (error) {
+      console.error("Sign-in error:", error);
       alert("Error while signing in");
     }
   };

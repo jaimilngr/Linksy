@@ -14,12 +14,12 @@ model User {
   name              String
   password          String
   contactNo         String
-  location          String?
   Address           String?
+  profileImageUrl   String?
   services          Service[]      @relation("UserServices")
+  notifications     Notification[]
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
-  notifications     Notification[]
 }
 
 enum ServiceProviderMode {
@@ -33,16 +33,14 @@ model ServiceProvider {
   name              String
   password          String
   contactNo         String         @unique
-  type              String?
   mode              ServiceProviderMode  
-  location          String?
   profileImageUrl   String?
   rating            Float          @default(0.0)
   reviews           Review[]
   services          Service[]      @relation("ProviderServices")
+  notifications     Notification[]
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
-  notifications     Notification[]
 }
 
 model Service {

@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../index.css";
 import { Mode } from "./Mode";
 import { Link as ScrollLink } from "react-scroll";
 import { useAuth } from '../Context/Authcontext';
-
 
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,6 +11,10 @@ export const Navbar = () => {
   const [lastScrollY, setLastScrollY] = useState(0);
   const [showNavbar, setShowNavbar] = useState(true);
   const navigate = useNavigate();
+  const authContext = useAuth();
+  
+  // Ref for dropdown menu
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleToggle = () => {
     setIsOpen(!isOpen);
@@ -22,9 +25,11 @@ export const Navbar = () => {
   };
 
   const handleSignOut = () => {
-    signOut();
-    navigate("/"); 
-    localStorage.removeItem("needsAdditionalData");
+    if (authContext) {
+      authContext.signOut();
+      navigate("/");
+      localStorage.removeItem("needsAdditionalData");
+    }
   };
 
   const navItems = [
@@ -34,18 +39,11 @@ export const Navbar = () => {
     { to: "#", label: "FAQ" },
   ];
 
-  const authContext = useAuth();
-
-  if (!authContext) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  const { authUser, isLoggedIn, signOut } = authContext;
-
-
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > lastScrollY) {
         setShowNavbar(false);
+        setIsDropdownOpen(false); 
       } else {
         setShowNavbar(true);
       }
@@ -57,9 +55,28 @@ export const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  if (!authContext) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  const { authUser, isLoggedIn } = authContext;
+
   return (
-    <nav className={`  z-20 top-0 start-0 border-b border-gray-400 bg-background dark:bg-background sticky transition-transform duration-300 ${showNavbar ? 'translate-y-0' : '-translate-y-full'}`}>
-      <div className=" flex flex-wrap items-center justify-between  py-5 px-6 ">
+    <nav className={`z-20 top-0 start-0 border-b border-gray-400 bg-background dark:bg-background sticky transition-transform duration-300 ${showNavbar ? 'translate-y-0' : '-translate-y-full'}`}>
+      <div className="flex flex-wrap items-center justify-between py-5 px-6">
         <a href="/" className="flex items-center space-x-3 rtl:space-x-reverse">
           <span className="self-center text-2xl font-bold whitespace-nowrap sm:text-4xl">
             Linksy
@@ -67,17 +84,15 @@ export const Navbar = () => {
         </a>
         <div className="flex md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse">
           <div className="self-center">
-
-        <Mode />
+            <Mode />
           </div>
           <div className="">
-
-      {isLoggedIn ? (
-        <div className="relative">
-          <button onClick={handleDropdownToggle}>
-          <img id="avatarButton"   className="w-14 h-14 rounded-full cursor-pointer mx-3" src="https://img.icons8.com/stickers/100/user-male-circle.png" alt="User dropdown"/>
-          </button>
-          {isDropdownOpen && (
+            {isLoggedIn ? (
+              <div className="relative" ref={dropdownRef}>
+                <button onClick={handleDropdownToggle}>
+                  <img id="avatarButton" className="w-14 h-14 rounded-full cursor-pointer mx-3" src="https://img.icons8.com/stickers/100/user-male-circle.png" alt="User dropdown"/>
+                </button>
+                {isDropdownOpen && (
                   <div className="absolute right-0 z-10 bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700 dark:divide-gray-600">
                     <div className="px-4 py-3 text-sm text-gray-900 dark:text-white">
                       <div>{authUser}</div>
@@ -110,9 +125,6 @@ export const Navbar = () => {
               </Link>
             )}
           </div>
-    
-      
-          
           <button
             onClick={handleToggle}
             type="button"
@@ -138,21 +150,15 @@ export const Navbar = () => {
           </button>
         </div>
         <div
-          className={`absolute top-full right-0  w-full md:w-auto md:flex md:items-center md:justify-between md:relative md:bg-background md:dark:bg-background  ${
-            isOpen ? "block border-zinc-200 border-t-2" : "hidden " 
-          }`}
+          className={`absolute top-full right-0 w-full md:w-auto md:flex md:items-center md:justify-between md:relative md:bg-background md:dark:bg-background ${isOpen ? "block border-zinc-200 border-t-2" : "hidden"} `}
           aria-expanded={isOpen}
         >
-          <ul className="flex flex-col text-xl p-4 md:p-0 bg-background  text-right font-light rounded-lg md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0  dark:bg-background z-50">
+          <ul className="flex flex-col text-xl p-4 md:p-0 bg-background text-right font-light rounded-lg md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0 dark:bg-background z-50">
             {navItems.map((item, index) => (
               <li key={index} className="relative group">
                 <ScrollLink
                   to={item.to}
-                  className={`block py-2 px-3 rounded md:bg-transparent md:p-0 ${
-                    item.current
-                      ? " text-blue-700"
-                      : " dark:text-gray-300 hover:text-blue-700"
-                  }`}
+                  className={`block py-2 px-3 rounded md:bg-transparent md:p-0 ${item.current ? "text-blue-700" : "dark:text-gray-300 hover:text-blue-700"}`}
                   aria-current={item.current ? "page" : undefined}
                 >
                   {item.label}

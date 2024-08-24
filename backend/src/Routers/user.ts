@@ -139,52 +139,51 @@ if (user) {
   });
 });
 
-
 authRouter.post('/additional-data', async (c) => {
-  const prisma = new PrismaClient().$extends(withAccelerate());
+  const body = await c.req.json();
+
+  const prisma = new PrismaClient({
+    datasourceUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
 
   try {
-    const authHeader = c.req.header('Authorization');
-    const token = authHeader?.split(' ')[1];
+    const { token, role, address } = body;
 
     if (!token) {
       return c.json({ error: 'No token provided' }, 401);
     }
 
-    const secretKey = c.env.JWT_Secret; 
-    //@ts-ignore
-    const decodedToken = jwt.verify(token,secretKey);
+    let decodedToken;
 
-    const userId = decodedToken.id; 
+    try {
+      decodedToken = await verify(token, c.env.JWT_Secret);
+      console.log('Decoded token:', decodedToken);
+    } catch (jwtError:any) {
+      console.error('JWT Error:', jwtError);
+      return c.json({ error: 'Invalid or expired token', details: jwtError.message }, 401);
+    }
 
-    const body = await c.req.json();
+    const userId = decodedToken.id as string;
 
-    if (body.role === 'service') {
-      await prisma.serviceProvider.update({
-        where:{ id:userId},
-        data: {
-          location: `${body.latitude},${body.longitude}`,
-          //@ts-ignore
-          address: body.address,
-        },
-      });
-    } else {
+    if (!userId) {
+      return c.json({ error: 'Invalid user ID from token' }, 400);
+    }
+    
+    if (role === 'user') {
       await prisma.user.update({
         where: { id: userId },
         data: {
-          location: `${body.latitude},${body.longitude}`,
-                    //@ts-ignore
-
-          address: body.address,
+          Address: address,
         },
       });
     }
 
     return c.json({ success: true });
-  } catch (error) {
+  } catch (error:any) {
     console.error('Error processing additional data:', error);
-    return c.json({ error: 'Failed to submit additional data' }, 500);
+    return c.json({ error: 'Failed to submit additional data', details: error.message }, 500);
   }
 });
+
 
 export default authRouter;

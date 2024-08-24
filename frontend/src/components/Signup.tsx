@@ -1,41 +1,31 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { BACKEND_URL } from "../config";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { BACKEND_URL } from "../config";
+import Cookies from "js-cookie";
+import { useAuth } from "../Context/Authcontext";
 import { SignupType } from "@jaimil/linksy";
 import { Role } from "./Role";
-import { useAuth } from "../Context/Authcontext";
-import Cookies from "js-cookie";
 
 interface SignUpProps {
   handleGoBack: () => void;
 }
 
-type RoleType = "user" | "service" ;
+type RoleType = "user" | "service";
 
-
-
-const SignUp = ({ handleGoBack }: SignUpProps) => {
+const SignUp: React.FC<SignUpProps> = ({ handleGoBack }) => {
   const navigate = useNavigate();
+  const { setAuthState } = useAuth();
   const [postInputs, setPostInputs] = useState<SignupType>({
     name: "",
     contactNo: "",
     email: "",
     password: "",
-    mode: undefined, 
+    mode: undefined,
   });
-
   const [selectedRole, setSelectedRole] = useState<RoleType | null>(null);
   const [showSignUp, setShowSignUp] = useState<boolean>(false);
-
-  const authContext = useAuth();
-
-  if (!authContext) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  
-
 
   const handleRoleSelect = (role: RoleType) => {
     setSelectedRole(role);
@@ -53,18 +43,23 @@ const SignUp = ({ handleGoBack }: SignUpProps) => {
         ...postInputs,
         role: selectedRole,
       });
+
       const { jwt, name } = response.data;
 
-      
-      Cookies.set('token', jwt, { expires: 10 }); 
+      Cookies.set('token', jwt, { expires: 10 });
       Cookies.set('authUser', name, { expires: 10 });
       Cookies.set('role', selectedRole, { expires: 10 });
 
-
-      localStorage.setItem('needsAdditionalData', 'true');
+      // Update authentication context
+      setAuthState({
+        authUser: name,
+        isLoggedIn: true,
+        role: selectedRole,
+      });
 
       navigate("/", { replace: true });
-    } catch (e) {
+    } catch (error) {
+      console.error("Sign-up error:", error);
       alert("Error while signing up");
     }
   };
@@ -88,8 +83,8 @@ const SignUp = ({ handleGoBack }: SignUpProps) => {
           >
             &times;
           </button>
-          <p className="font-sans text-4xl text-white font-bold mb-8 mt-5 md:text-5xl">
-            Enter your details
+          <p className="font-sans text-5xl text-white font-bold mb-8 mt-5">
+            Create an Account
           </p>
           <form
             className="flex flex-col gap-4 w-full max-w-md px-10"
@@ -99,55 +94,38 @@ const SignUp = ({ handleGoBack }: SignUpProps) => {
               type="text"
               placeholder="Name"
               className="p-2 rounded bg-white text-gray-900"
+              value={postInputs.name}
               onChange={(e) =>
-                setPostInputs((c: any) => ({ ...c, name: e.target.value }))
+                setPostInputs({ ...postInputs, name: e.target.value })
               }
             />
             <input
-              type="number"
-              placeholder="Contact no"
+              type="text"
+              placeholder="Contact No."
               className="p-2 rounded bg-white text-gray-900"
+              value={postInputs.contactNo}
               onChange={(e) =>
-                setPostInputs((c: any) => ({ ...c, contactNo: e.target.value }))
+                setPostInputs({ ...postInputs, contactNo: e.target.value })
               }
             />
             <input
               type="email"
               placeholder="Email"
               className="p-2 rounded bg-white text-gray-900"
+              value={postInputs.email}
               onChange={(e) =>
-                setPostInputs((c: any) => ({ ...c, email: e.target.value }))
+                setPostInputs({ ...postInputs, email: e.target.value })
               }
             />
             <input
               type="password"
               placeholder="Password"
               className="p-2 rounded bg-white text-gray-900"
+              value={postInputs.password}
               onChange={(e) =>
-                setPostInputs((c: any) => ({ ...c, password: e.target.value }))
+                setPostInputs({ ...postInputs, password: e.target.value })
               }
             />
-            {selectedRole === "service" && (
-              <>
-                <select
-                  id="mode"
-                  className="text-gray-700 text-md rounded-lg block w-full p-2.5"
-                  onChange={(e) =>
-                    setPostInputs((prev: any) => ({
-                      ...prev,
-                      mode: e.target.value, 
-                    }))
-                  }
-                >
-                  <option value="" disabled selected>
-                    Select Preferred Mode of Service
-                  </option>
-                  <option value="offline">OFFLINE / ONSIGHT</option>
-                  <option value="online">ONLINE</option>
-                </select>
-              </>
-            )}
-            <p className="text-gray-50">Password must have 6 characters</p>
             <button
               type="submit"
               className="text-white bg-blue-600 border border-blue-700 hover:bg-blue-700 focus:ring-4 focus:ring-blue-500 font-medium rounded-full text-sm px-5 py-2.5"
