@@ -26,6 +26,7 @@ const SignUp: React.FC<SignUpProps> = ({ handleGoBack }) => {
   });
   const [selectedRole, setSelectedRole] = useState<RoleType | null>(null);
   const [showSignUp, setShowSignUp] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const handleRoleSelect = (role: RoleType) => {
     setSelectedRole(role);
@@ -38,6 +39,7 @@ const SignUp: React.FC<SignUpProps> = ({ handleGoBack }) => {
       alert("Please select a role");
       return;
     }
+    setLoading(true); // Show loading spinner
     try {
       const response = await axios.post(`${BACKEND_URL}/api/v1/user/signup`, {
         ...postInputs,
@@ -46,21 +48,25 @@ const SignUp: React.FC<SignUpProps> = ({ handleGoBack }) => {
 
       const { jwt, name } = response.data;
 
-      Cookies.set('token', jwt, { expires: 10 });
-      Cookies.set('authUser', name, { expires: 10 });
-      Cookies.set('role', selectedRole, { expires: 10 });
+      Cookies.set("token", jwt, { expires: 10 });
+      Cookies.set("authUser", name, { expires: 10 });
+      Cookies.set("role", selectedRole, { expires: 10 });
 
-      // Update authentication context
       setAuthState({
         authUser: name,
         isLoggedIn: true,
         role: selectedRole,
+        token: jwt,
       });
+
+      localStorage.setItem("needsAdditionalData", "true");
 
       navigate("/", { replace: true });
     } catch (error) {
       console.error("Sign-up error:", error);
       alert("Error while signing up");
+    } finally {
+      setLoading(false); // Hide loading spinner
     }
   };
 
@@ -128,9 +134,18 @@ const SignUp: React.FC<SignUpProps> = ({ handleGoBack }) => {
             />
             <button
               type="submit"
-              className="text-white bg-blue-600 border border-blue-700 hover:bg-blue-700 focus:ring-4 focus:ring-blue-500 font-medium rounded-full text-sm px-5 py-2.5"
+              disabled={loading}
+              className="relative inline-flex items-center justify-center p-2 text-white bg-blue-600 border border-blue-700 hover:bg-blue-700 focus:ring-4 focus:ring-blue-500 font-medium rounded-full text-sm px-5 py-2.5"
             >
-              Sign Up
+              {loading ? (
+                <div className="sliding-bars absolute inset-0">
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                </div>
+              ) : (
+                "Sign Up"
+              )}
             </button>
           </form>
         </motion.div>

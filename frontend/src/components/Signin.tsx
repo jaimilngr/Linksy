@@ -15,9 +15,11 @@ const SignIn: React.FC<SignInProps> = ({ handleGoBack }) => {
   const { setAuthState } = useAuth();
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setLoading(true); // Show loading spinner
     try {
       const response = await axios.post(`${BACKEND_URL}/api/v1/user/signin`, {
         email,
@@ -26,20 +28,23 @@ const SignIn: React.FC<SignInProps> = ({ handleGoBack }) => {
 
       const { jwt, name, role } = response.data;
 
-      Cookies.set('token', jwt, { expires: 10 });
-      Cookies.set('authUser', name, { expires: 10 });
-      Cookies.set('role', role, { expires: 10 });
+      Cookies.set("token", jwt, { expires: 10 });
+      Cookies.set("authUser", name, { expires: 10 });
+      Cookies.set("role", role, { expires: 10 });
 
       setAuthState({
         authUser: name,
         isLoggedIn: true,
         role,
+        token: jwt,
       });
 
       navigate("/", { replace: true });
     } catch (error) {
       console.error("Sign-in error:", error);
       alert("Error while signing in");
+    } finally {
+      setLoading(false); // Hide loading spinner
     }
   };
 
@@ -81,9 +86,18 @@ const SignIn: React.FC<SignInProps> = ({ handleGoBack }) => {
         />
         <button
           type="submit"
-          className="text-white bg-blue-600 border border-blue-700 hover:bg-blue-700 focus:ring-4 focus:ring-blue-500 font-medium rounded-full text-sm px-5 py-2.5"
+          disabled={loading}
+          className="relative inline-flex items-center justify-center p-2 text-white bg-blue-600 border border-blue-700 hover:bg-blue-700 focus:ring-4 focus:ring-blue-500 font-medium rounded-full text-sm px-5 py-2.5"
         >
-          Sign In
+          {loading ? (
+            <div className="sliding-bars absolute inset-0">
+              <div></div>
+              <div></div>
+              <div></div>
+            </div>
+          ) : (
+            "Sign In"
+          )}
         </button>
       </form>
     </motion.div>

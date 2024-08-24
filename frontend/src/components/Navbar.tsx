@@ -29,6 +29,8 @@ export const Navbar = () => {
       authContext.signOut();
       navigate("/");
       localStorage.removeItem("needsAdditionalData");
+      localStorage.removeItem("latitude");
+      localStorage.removeItem("longitude");
     }
   };
 
@@ -77,11 +79,11 @@ export const Navbar = () => {
   return (
     <nav className={`z-20 top-0 start-0 border-b border-gray-400 bg-background dark:bg-background sticky transition-transform duration-300 ${showNavbar ? 'translate-y-0' : '-translate-y-full'}`}>
       <div className="flex flex-wrap items-center justify-between py-5 px-6">
-        <a href="/" className="flex items-center space-x-3 rtl:space-x-reverse">
+        <Link to="/" className="flex items-center space-x-3 rtl:space-x-reverse">
           <span className="self-center text-2xl font-bold whitespace-nowrap sm:text-4xl">
             Linksy
           </span>
-        </a>
+        </Link>
         <div className="flex md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse">
           <div className="self-center">
             <Mode />
@@ -98,18 +100,16 @@ export const Navbar = () => {
                       <div>{authUser}</div>
                     </div>
                     <ul className="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="avatarButton">
-                      <li>
-                        <a href="#" className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Dashboard</a>
+                    <li>
+                        <p className="block px-4 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Notifications</p>
                       </li>
                       <li>
-                        <a href="#" className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Settings</a>
+                        <Link to="/dashboard" className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Settings</Link>
                       </li>
-                      <li>
-                        <a href="#" className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Earnings</a>
-                      </li>
+                      
                     </ul>
                     <div className="py-1">
-                      <a href="#" onClick={handleSignOut} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white">Sign out</a>
+                      <Link to="" onClick={handleSignOut} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white">Sign out</Link>
                     </div>
                   </div>
                 )}

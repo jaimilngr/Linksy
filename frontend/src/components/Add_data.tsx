@@ -6,6 +6,10 @@ import Cookies from "js-cookie";
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
 import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
+import Lottie from "lottie-react";
+import serviceanimation from "../assets/animations/service.json";
+import { Link } from "react-router-dom";
+
 
 L.Marker.prototype.options.icon = L.icon({
   iconUrl,
@@ -67,23 +71,6 @@ export const Add_Data = ({ onSubmit }: ModalProps) => {
     }
   };
 
-  const handleUpdateLocation = () => {
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setPosition({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        });
-
-        localStorage.setItem('latitude', position.coords.latitude.toString());
-        localStorage.setItem('longitude', position.coords.longitude.toString());
-      },
-      (error) => {
-        console.error("Error getting updated location: ", error);
-      }
-    );
-  };
-
   const LocationMarker = () => {
     useMapEvents({
       click(e) {
@@ -94,10 +81,9 @@ export const Add_Data = ({ onSubmit }: ModalProps) => {
     return position ? <Marker position={position}></Marker> : null;
   };
 
-  
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10">
-      <div className="bg-background p-6 rounded-lg shadow-lg w-full md:w-1/3">
+      <div className="bg-white p-6 rounded-lg shadow-lg w-full md:w-1/3">
         {step === 1 ? (
           <>
             <h2 className="text-lg text-black md:text-2xl font-bold mb-4">Confirm Your Location</h2>
@@ -119,55 +105,68 @@ export const Add_Data = ({ onSubmit }: ModalProps) => {
                 <p>Loading map...</p>
               )}
             </div>
-            {role === 'user' ? (
-              <button
-                onClick={() => setStep(2)}
-                className="bg-blue-500 text-white px-4 py-2 rounded w-full"
-                disabled={!position}
-              >
-                Next
-              </button>
-            ) : (
-              <button
-                onClick={() => handleSubmit({ preventDefault: () => {} } as React.FormEvent<HTMLFormElement>)}
-                className="bg-blue-500 text-white px-4 py-2 rounded w-full"
-                disabled={!position}
-              >
-                Submit
-              </button>
-            )}
+            <button
+              onClick={() => setStep(2)}
+              className="bg-blue-500 text-white px-4 py-2 rounded w-full"
+              disabled={!position}
+            >
+              Next
+            </button>
           </>
         ) : (
           <>
-            <h2 className="text-lg md:text-2xl font-bold mb-4">Provide Address Details</h2>
-            <form onSubmit={handleSubmit}>
-              {role === 'user' && (
-                <input
-                  type="text"
-                  name="address"
-                  placeholder="Enter your address"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  className="p-2 mb-4 w-full border border-gray-300 rounded"
-                  required
-                />
-              )}
-              <div className="flex justify-around">
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  className="bg-gray-500 text-white px-4 py-2 rounded w-32"
-                >
-                  Back
-                </button>
-                <button
-                  type="submit"
-                  className="bg-blue-500 text-white px-4 py-2 rounded w-32"
-                >
-                  Submit
-                </button>
-              </div>
-            </form>
+          
+          {role === 'service' ? (
+  <>
+    <h2 className="text-lg text-black md:text-2xl font-bold mb-4">Add Your Service Now</h2>
+    <Lottie animationData={serviceanimation} />
+    <div className="flex justify-around">
+      <button
+        type="button"
+        onClick={() => setStep(1)}
+        className="bg-gray-500 text-white px-4 py-2 rounded w-32"
+      >
+        Back
+      </button>
+      <button
+        type="submit" // Use type="submit" to submit the form
+        className="bg-green-500 text-white px-4 py-2 rounded"
+      >
+        Create Service
+      </button>
+    </div>
+  </>
+) : (
+  <>
+    <h2 className="text-lg md:text-2xl font-bold mb-4">Provide Address Details</h2>
+    <form onSubmit={handleSubmit}>
+      <input
+        type="text"
+        name="address"
+        placeholder="Enter your address"
+        value={address}
+        onChange={(e) => setAddress(e.target.value)}
+        className="p-2 mb-4 w-full border border-gray-300 rounded"
+        required
+      />
+      <div className="flex justify-around">
+        <button
+          type="button"
+          onClick={() => setStep(1)}
+          className="bg-gray-500 text-white px-4 py-2 rounded w-32"
+        >
+          Back
+        </button>
+        <button
+          type="submit"
+          className="bg-blue-500 text-white px-4 py-2 rounded w-32"
+        >
+          Submit
+        </button>
+      </div>
+    </form>
+  </>
+)}
           </>
         )}
       </div>

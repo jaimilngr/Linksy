@@ -31,7 +31,7 @@
   
     .dark {
       --text: #e6e8eb;
-      --background: #030911;
+      --background: #111827;
       --primary: #9fb3d5;
       --secondary: #294a85;
       --accent: #487bdb;
@@ -40,5 +40,48 @@
     body {
       color: var(--text);
       background-color: var(--background);
+    }
+  }
+
+
+  .sliding-bars {
+    display: inline-block;
+    position: relative;
+    width: 50px;
+    height: 20px;
+  }
+  
+  .sliding-bars div {
+    position: absolute;
+    top: 0;
+    width: 6px;
+    height: 100%;
+    background: #3498db;
+    animation: slide 1.2s infinite ease-in-out;
+  }
+  
+  .sliding-bars div:nth-child(1) {
+    left: 0;
+    animation-delay: -0.4s;
+  }
+  
+  .sliding-bars div:nth-child(2) {
+    left: 8px;
+    animation-delay: -0.2s;
+  }
+  
+  .sliding-bars div:nth-child(3) {
+    left: 16px;
+  }
+  
+  @keyframes slide {
+    0% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+    100% {
+      transform: translateY(0);
     }
   }

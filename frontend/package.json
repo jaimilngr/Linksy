@@ -19,6 +19,7 @@
     "js-cookie": "^3.0.5",
     "leaflet": "^1.9.4",
     "locomotive-scroll": "^4.1.4",
+    "lottie-react": "^2.4.0",
     "node-sass": "^9.0.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

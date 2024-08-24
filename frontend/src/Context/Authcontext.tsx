@@ -19,6 +19,7 @@ interface AuthState {
   authUser: string | null;
   isLoggedIn: boolean;
   role: string | null;
+  token: string | null;
 }
 
 export function useAuth() {
@@ -57,7 +58,7 @@ export function AuthProvider({ children }: AuthProps) {
     setIsLoggedIn(authState.isLoggedIn);
     setRole(authState.role);
     Cookies.set('authUser', authState.authUser || '', { expires: 10 });
-    Cookies.set('token', authState.isLoggedIn ? 'dummy_token' : '', { expires: 10 }); 
+    Cookies.set('token', authState.token || '', { expires: 10 }); 
     Cookies.set('role', authState.role || '', { expires: 10 });
   };
 
