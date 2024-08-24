@@ -6,7 +6,7 @@ export const MyServices = () => {
       { id: 2, name: "Service 2", details: false },
     ]);
   
-    const toggleDetails = (id) => {
+    const toggleDetails = (id:any) => {
       setServices((prevServices) =>
         prevServices.map((service) =>
           service.id === id
