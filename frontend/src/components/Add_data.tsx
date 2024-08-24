@@ -128,12 +128,14 @@ export const Add_Data = ({ onSubmit }: ModalProps) => {
       >
         Back
       </button>
+      <Link to={"/dashboard"}>
       <button
-        type="submit" // Use type="submit" to submit the form
+        type="submit" 
         className="bg-green-500 text-white px-4 py-2 rounded"
-      >
+        >
         Create Service
       </button>
+        </Link>
     </div>
   </>
 ) : (
