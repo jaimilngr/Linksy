@@ -11,8 +11,26 @@ export const authRouter = new Hono<{
   }
 }>();
 
+const jwtAuthMiddleware = async (c: any, next: any) => {
+  const authHeader = c.req.header('Authorization');
 
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return c.json({ error: 'Authorization token missing' }, 401);
+  }
 
+  const token = authHeader.split(' ')[1];
+  const jwtSecret = c.env.JWT_Secret;
+
+  try {
+    const decoded = await verify(token, jwtSecret);
+    (c.req as any).user = decoded; 
+  } catch (e) {
+    console.error("JWT verification failed:", e);
+    return c.json({ error: 'Invalid or expired token' }, 401);
+  }
+};
+
+// Sign-up route
 authRouter.post("/signup", async (c) => {
   const body = await c.req.json();
 
@@ -65,7 +83,7 @@ authRouter.post("/signup", async (c) => {
       jwt: token,
       name: user.name,
       id: user.id,
-      role:body.role
+      role: body.role
     });
 
   } catch (e) {
@@ -77,6 +95,7 @@ authRouter.post("/signup", async (c) => {
   }
 });
 
+// Sign-in route
 authRouter.post("/signin", async (c) => {
   const body = await c.req.json();
 
@@ -93,21 +112,7 @@ authRouter.post("/signin", async (c) => {
   let user;
   let role: "user" | "service" | null = null;
 
-user = await prisma.user.findUnique({
-  where: {
-    email: body.email,
-    password: body.password
-  },
-  select: {
-    id: true,
-    name: true
-  }
-});
-
-if (user) {
-  role = "user";
-} else {
-  user = await prisma.serviceProvider.findUnique({
+  user = await prisma.user.findUnique({
     where: {
       email: body.email,
       password: body.password
@@ -117,11 +122,25 @@ if (user) {
       name: true
     }
   });
-  
+
   if (user) {
-    role = "service";
+    role = "user";
+  } else {
+    user = await prisma.serviceProvider.findUnique({
+      where: {
+        email: body.email,
+        password: body.password
+      },
+      select: {
+        id: true,
+        name: true
+      }
+    });
+    
+    if (user) {
+      role = "service";
+    }
   }
-}
   if (!user) {
     c.status(403);
     return c.json({
@@ -139,6 +158,8 @@ if (user) {
   });
 });
 
+authRouter.use(jwtAuthMiddleware);
+
 authRouter.post('/additional-data', async (c) => {
   const body = await c.req.json();
 
@@ -147,43 +168,79 @@ authRouter.post('/additional-data', async (c) => {
   }).$extends(withAccelerate());
 
   try {
-    const { token, role, address } = body;
+    const { address } = body;
 
-    if (!token) {
-      return c.json({ error: 'No token provided' }, 401);
-    }
-
-    let decodedToken;
-
-    try {
-      decodedToken = await verify(token, c.env.JWT_Secret);
-      console.log('Decoded token:', decodedToken);
-    } catch (jwtError:any) {
-      console.error('JWT Error:', jwtError);
-      return c.json({ error: 'Invalid or expired token', details: jwtError.message }, 401);
-    }
-
-    const userId = decodedToken.id as string;
+    const userId = (c.req as any).user.id as string;
 
     if (!userId) {
       return c.json({ error: 'Invalid user ID from token' }, 400);
     }
     
-    if (role === 'user') {
-      await prisma.user.update({
-        where: { id: userId },
-        data: {
-          Address: address,
-        },
-      });
-    }
+    await prisma.user.update({
+      where: { id: userId },
+      //@ts-ignore
+      data: { address },
+    });
 
     return c.json({ success: true });
-  } catch (error:any) {
+  } catch (error: any) {
     console.error('Error processing additional data:', error);
     return c.json({ error: 'Failed to submit additional data', details: error.message }, 500);
   }
 });
 
+authRouter.get('/profile', async (c) => {
+  const user = (c.req as any).user;
+
+  if (!user) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
+  const userId = user.id as string;
+
+  const prisma = new PrismaClient({
+    datasourceUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+
+  const profile = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, name: true, email: true, contactNo: true, Address: true }
+  });
+
+  if (!profile) {
+    return c.json({ error: 'User not found' }, 404);
+  }
+
+  return c.json(profile);
+});
+
+// Profile route (put)
+authRouter.put('/profile', async (c) => {
+  const user = (c.req as any).user;
+
+  if (!user) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
+  const userId = user.id as string;
+  const body = await c.req.json();
+
+  const prisma = new PrismaClient({
+    datasourceUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: { ...body },
+      select: { id: true, name: true, email: true, contactNo: true, Address: true }
+    });
+
+    return c.json(updatedUser);
+  } catch (error: any) {
+    console.error('Error updating profile:', error);
+    return c.json({ error: 'Failed to update profile', details: error.message }, 500);
+  }
+});
 
 export default authRouter;
