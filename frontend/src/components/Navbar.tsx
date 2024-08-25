@@ -13,7 +13,6 @@ export const Navbar = () => {
   const navigate = useNavigate();
   const authContext = useAuth();
   
-  // Ref for dropdown menu
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleToggle = () => {
@@ -27,10 +26,10 @@ export const Navbar = () => {
   const handleSignOut = () => {
     if (authContext) {
       authContext.signOut();
-      navigate("/");
       localStorage.removeItem("needsAdditionalData");
       localStorage.removeItem("latitude");
       localStorage.removeItem("longitude");
+      navigate("/");
     }
   };
 
@@ -109,7 +108,7 @@ export const Navbar = () => {
                       
                     </ul>
                     <div className="py-1">
-                      <Link to="" onClick={handleSignOut} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white">Sign out</Link>
+                      <Link to="/" onClick={handleSignOut} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white">Sign out</Link>
                     </div>
                   </div>
                 )}

@@ -24,6 +24,7 @@ const jwtAuthMiddleware = async (c: any, next: any) => {
   try {
     const decoded = await verify(token, jwtSecret);
     (c.req as any).user = decoded; 
+    return next();
   } catch (e) {
     console.error("JWT verification failed:", e);
     return c.json({ error: 'Invalid or expired token' }, 401);
@@ -178,8 +179,7 @@ authRouter.post('/additional-data', async (c) => {
     
     await prisma.user.update({
       where: { id: userId },
-      //@ts-ignore
-      data: { address },
+      data: { Address:address },
     });
 
     return c.json({ success: true });
@@ -191,52 +191,89 @@ authRouter.post('/additional-data', async (c) => {
 
 authRouter.get('/profile', async (c) => {
   const user = (c.req as any).user;
+  const role = c.req.header('Role'); 
 
-  if (!user) {
-    return c.json({ error: 'Unauthorized' }, 401);
+  if (!user || !role) {
+    return c.json({ error: 'Unauthorized or role missing' }, 401);
   }
 
   const userId = user.id as string;
-
-  const prisma = new PrismaClient({
-    datasourceUrl: c.env.DATABASE_URL,
-  }).$extends(withAccelerate());
-
-  const profile = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { id: true, name: true, email: true, contactNo: true, Address: true }
-  });
-
-  if (!profile) {
-    return c.json({ error: 'User not found' }, 404);
-  }
-
-  return c.json(profile);
-});
-
-// Profile route (put)
-authRouter.put('/profile', async (c) => {
-  const user = (c.req as any).user;
-
-  if (!user) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-
-  const userId = user.id as string;
-  const body = await c.req.json();
 
   const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());
 
   try {
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: { ...body },
-      select: { id: true, name: true, email: true, contactNo: true, Address: true }
-    });
+    let profile;
 
-    return c.json(updatedUser);
+    if (role === 'service') {
+      profile = await prisma.serviceProvider.findUnique({
+        //@ts-ignore
+        where: { id: userId },
+        select: { id: true, name: true, email: true, contactNo: true }
+      });
+    } else if (role === 'user') {
+      profile = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, name: true, email: true, contactNo: true, Address: true }
+      });
+    } else {
+      return c.json({ error: 'Invalid role' }, 400);
+    }
+
+    if (!profile) {
+      return c.json({ error: 'User not found' }, 404);
+    }
+
+    return c.json(profile);
+  } catch (error: any) {
+    console.error('Error fetching profile data:', error);
+    return c.json({ error: 'Failed to fetch profile data', details: error.message }, 500);
+  }
+});
+
+// Profile route (put)
+authRouter.put('/profile', async (c) => {
+  const user = (c.req as any).user;
+  const role = c.req.header('Role'); 
+  const body = await c.req.json();
+
+  if (!user || !role) {
+    return c.json({ error: 'Unauthorized or role missing' }, 401);
+  }
+
+  const userId = user.id as string;
+
+  const prisma = new PrismaClient({
+    datasourceUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+
+  try {
+    if (!body.name || !body.email) {
+      return c.json({ error: 'Missing required fields' }, 400);
+    }
+
+    if (role === 'service') {
+      const updatedServiceProvider = await prisma.serviceProvider.update({
+                //@ts-ignore
+
+        where: { id: userId },
+        data: { ...body },
+        select: { id: true, name: true, email: true, contactNo: true}
+      });
+
+      return c.json(updatedServiceProvider);
+    } else if (role === 'user') {
+      const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: { ...body },
+        select: { id: true, name: true, email: true, contactNo: true, Address: true }
+      });
+
+      return c.json(updatedUser);
+    } else {
+      return c.json({ error: 'Invalid role' }, 400);
+    }
   } catch (error: any) {
     console.error('Error updating profile:', error);
     return c.json({ error: 'Failed to update profile', details: error.message }, 500);

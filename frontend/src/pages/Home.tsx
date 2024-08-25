@@ -28,8 +28,6 @@ export const Home = () => {
       
       const payload = {
         ...data,
-        role, 
-        token,
       };
       
       if(role == 'user'){

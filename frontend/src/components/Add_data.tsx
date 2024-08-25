@@ -140,7 +140,7 @@ export const Add_Data = ({ onSubmit }: ModalProps) => {
   </>
 ) : (
   <>
-    <h2 className="text-lg md:text-2xl font-bold mb-4">Provide Address Details</h2>
+    <h2 className="text-lg md:text-2xl text-black font-bold mb-4">Provide Address Details</h2>
     <form onSubmit={handleSubmit}>
       <input
         type="text"
