@@ -119,8 +119,8 @@ export const Add_Data = ({ onSubmit }: ModalProps) => {
           {role === 'service' ? (
   <>
     <h2 className="text-lg text-black md:text-2xl font-bold mb-4">Add Your Service Now</h2>
-    <Lottie animationData={serviceanimation} />
-    <div className="flex justify-around">
+    <Lottie animationData={serviceanimation}/>
+    <div className="flex justify-around mt-3">
       <button
         type="button"
         onClick={() => setStep(1)}
@@ -131,6 +131,9 @@ export const Add_Data = ({ onSubmit }: ModalProps) => {
       <Link to={"/dashboard"}>
       <button
         type="submit" 
+        onClick={()=>{
+          localStorage.removeItem('needsAdditionalData'); 
+        }}
         className="bg-green-500 text-white px-4 py-2 rounded"
         >
         Create Service

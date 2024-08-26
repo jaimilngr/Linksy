@@ -8,7 +8,7 @@ const app = new Hono();
 app.use('*', cors());
 
 app.route('/api/v1/user', authRouter);
-app.route('/api/v1/provider', serviceRouter);
+app.route('/api/v1/service', serviceRouter);
 
 
 export default app;

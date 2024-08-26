@@ -14,10 +14,10 @@ model User {
   name              String
   password          String
   contactNo         String
-  Address           String?
+  address           String?
   profileImageUrl   String?
-  services          Service[]      @relation("UserServices")
   notifications     Notification[]
+  tickets           Ticket[]       @relation("UserTickets") 
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
 }
@@ -28,43 +28,62 @@ enum ServiceProviderMode {
 }
 
 model ServiceProvider {
-  id                Int            @id @default(autoincrement())
-  email             String         @unique
+  id                String            @id @default(uuid())
+  email             String            @unique
   name              String
   password          String
-  contactNo         String         @unique
+  contactNo         String            @unique
   mode              ServiceProviderMode  
   profileImageUrl   String?
-  rating            Float          @default(0.0)
+  rating            Float             @default(0.0)
   reviews           Review[]
-  services          Service[]      @relation("ProviderServices")
+  services          Service[]         @relation("ProviderServices")
   notifications     Notification[]
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  tickets          Ticket[]            @relation("ProviderTickets")
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
 }
 
 model Service {
-  id               Int               @id @default(autoincrement())
-  userId           String?
-  providerId       Int?
+  id               String               @id @default(uuid())
+  providerId       String     
   serviceType      String
   name             String
   description      String?
-  price            Float?
-  timing           String?
+  price            Float
+  timing           String
   category         String
   images           String[]
-  location         String
+  latitude         Float
+  longitude        Float
   contactNo        String
-  user             User?             @relation("UserServices", fields: [userId], references: [id])
-  provider         ServiceProvider?  @relation("ProviderServices", fields: [providerId], references: [id]) 
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  tickets          Ticket[]            @relation("ServiceTickets")
+  provider         ServiceProvider?    @relation("ProviderServices", fields: [providerId], references: [id]) 
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+}
+
+model Ticket {
+  id         Int      @id @default(autoincrement())
+  userId     String
+  serviceId  String 
+  providerId String  
+  status     TicketStatus 
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  user       User     @relation("UserTickets", fields: [userId], references: [id])
+  service    Service  @relation("ServiceTickets", fields: [serviceId], references: [id])
+  provider   ServiceProvider @relation("ProviderTickets",fields: [providerId], references: [id]) 
+}
+
+enum TicketStatus {
+  open
+  closed
 }
 
 model Review {
   id               Int               @id @default(autoincrement())
-  providerId       Int
+  providerId       String            
   provider         ServiceProvider   @relation(fields: [providerId], references: [id])
   rating           Float
   comment          String?
@@ -72,13 +91,12 @@ model Review {
 }
 
 model Notification {
-  id         String       @id @default(uuid())
+  id         String            @id @default(uuid())
   userId     String?
-  providerId Int?
+  providerId String?           
   content    String
-  read       Boolean      @default(false)
-  user       User?        @relation(fields: [userId], references: [id])
+  read       Boolean           @default(false)
+  user       User?             @relation(fields: [userId], references: [id])
   provider   ServiceProvider? @relation(fields: [providerId], references: [id])
-  createdAt  DateTime     @default(now())
+  createdAt  DateTime          @default(now())
 }
-

@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client/edge";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { Hono } from "hono";
-import { jwt, sign, verify } from "hono/jwt";
+import {  sign, verify } from "hono/jwt";
 import { signupInput, signinInput } from '@jaimil/linksy';
 
 export const authRouter = new Hono<{
@@ -11,7 +11,7 @@ export const authRouter = new Hono<{
   }
 }>();
 
-const jwtAuthMiddleware = async (c: any, next: any) => {
+export const jwtAuthMiddleware = async (c: any, next: any) => {
   const authHeader = c.req.header('Authorization');
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -179,7 +179,7 @@ authRouter.post('/additional-data', async (c) => {
     
     await prisma.user.update({
       where: { id: userId },
-      data: { Address:address },
+      data: { address: address },
     });
 
     return c.json({ success: true });
@@ -208,14 +208,13 @@ authRouter.get('/profile', async (c) => {
 
     if (role === 'service') {
       profile = await prisma.serviceProvider.findUnique({
-        //@ts-ignore
         where: { id: userId },
         select: { id: true, name: true, email: true, contactNo: true }
       });
     } else if (role === 'user') {
       profile = await prisma.user.findUnique({
         where: { id: userId },
-        select: { id: true, name: true, email: true, contactNo: true, Address: true }
+        select: { id: true, name: true, email: true, contactNo: true, address: true }
       });
     } else {
       return c.json({ error: 'Invalid role' }, 400);
@@ -255,11 +254,9 @@ authRouter.put('/profile', async (c) => {
 
     if (role === 'service') {
       const updatedServiceProvider = await prisma.serviceProvider.update({
-                //@ts-ignore
-
         where: { id: userId },
         data: { ...body },
-        select: { id: true, name: true, email: true, contactNo: true}
+        select: { id: true, name: true, email: true, contactNo: true }
       });
 
       return c.json(updatedServiceProvider);
@@ -267,7 +264,7 @@ authRouter.put('/profile', async (c) => {
       const updatedUser = await prisma.user.update({
         where: { id: userId },
         data: { ...body },
-        select: { id: true, name: true, email: true, contactNo: true, Address: true }
+        select: { id: true, name: true, email: true, contactNo: true, address: true }
       });
 
       return c.json(updatedUser);
@@ -277,6 +274,65 @@ authRouter.put('/profile', async (c) => {
   } catch (error: any) {
     console.error('Error updating profile:', error);
     return c.json({ error: 'Failed to update profile', details: error.message }, 500);
+  }
+});
+
+// Update password route
+authRouter.put('/update-password', async (c) => {
+  const body = await c.req.json();
+
+  const { currentPassword, newPassword } = body;
+  const user = (c.req as any).user;
+  const role = c.req.header('Role'); 
+
+  if (!user || !role) {
+    return c.json({ error: 'Unauthorized or role missing' }, 401);
+  }
+
+  const userId = user.id as string;
+
+  const prisma = new PrismaClient({
+    datasourceUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+
+  try {
+    if (!currentPassword || !newPassword) {
+      return c.json({ error: 'Missing current or new password' }, 400);
+    }
+
+    let validUser;
+    if (role === 'service') {
+      validUser = await prisma.serviceProvider.findUnique({
+        where: { id: userId, password: currentPassword },
+      });
+      if (validUser) {
+        await prisma.serviceProvider.update({
+          where: { id: userId },
+          data: { password: newPassword },
+        });
+      }
+    } else if (role === 'user') {
+      validUser = await prisma.user.findUnique({
+        where: { id: userId, password: currentPassword },
+      });
+      if (validUser) {
+        await prisma.user.update({
+          where: { id: userId },
+          data: { password: newPassword },
+        });
+      }
+    } else {
+      return c.json({ error: 'Invalid role' }, 400);
+    }
+
+    if (!validUser) {
+      return c.json({ error: 'Current password is incorrect' }, 403);
+    }
+
+    return c.json({ success: true });
+  } catch (error: any) {
+    console.error('Error updating password:', error);
+    return c.json({ error: 'Failed to update password', details: error.message }, 500);
   }
 });
 

@@ -33,7 +33,7 @@ export const Profile = () => {
         const response = await axios.get(`${BACKEND_URL}/api/v1/user/profile`, {
           headers: {
             Authorization: `Bearer ${token}`,
-            Role: `${role}`
+            Role: `${role}`,
           },
         });
         const { name, email, contactNo, address } = response.data;
@@ -65,7 +65,7 @@ export const Profile = () => {
       await axios.put(`${BACKEND_URL}/api/v1/user/profile`, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
-          Role: `${role}`
+          Role: `${role}`,
         },
       });
       setProfileData(formData);
@@ -76,9 +76,51 @@ export const Profile = () => {
     }
   };
 
+  const getInitials = (name: string) => {
+    const initials = name
+      .split(' ')
+      .map((word) => word[0])
+      .join('');
+    return initials.toUpperCase();
+  };
+  const SkeletonLoader = () => (
+    <div>
+      <h3 className="text-2xl font-semibold mb-6">Personal Information</h3>
+      <div className="flex items-center space-x-4 mb-6">
+        <div className="w-24 h-24 rounded-full bg-gray-300 animate-pulse"></div>
+        <div className="space-y-2">
+          <div className="w-36 h-6 bg-gray-300 rounded animate-pulse"></div>
+          <div className="w-24 h-8 bg-gray-300 rounded animate-pulse"></div>
+        </div>
+      </div>
+      <div className="space-y-4">
+        <div className="flex space-x-4">
+          <div className="w-1/2">
+            <div className="h-4 bg-gray-300 rounded animate-pulse mb-2"></div>
+            <div className="w-full h-10 bg-gray-300 rounded animate-pulse"></div>
+          </div>
+        </div>
+        <div className="flex space-x-4">
+          <div className="w-1/2">
+            <div className="h-4 bg-gray-300 rounded animate-pulse mb-2"></div>
+            <div className="w-full h-10 bg-gray-300 rounded animate-pulse"></div>
+          </div>
+          <div className="w-1/2">
+            <div className="h-4 bg-gray-300 rounded animate-pulse mb-2"></div>
+            <div className="w-full h-10 bg-gray-300 rounded animate-pulse"></div>
+          </div>
+        </div>
+        <div>
+          <div className="h-4 bg-gray-300 rounded animate-pulse mb-2"></div>
+          <div className="w-full h-10 bg-gray-300 rounded animate-pulse"></div>
+        </div>
+      </div>
+    </div>
+  );
+
   if (loading) {
-    return <div>Loading...</div>;
-  }
+    return <SkeletonLoader />;
+  } 
 
   const isUserRole = Cookies.get('role') === 'user';
 
@@ -86,11 +128,9 @@ export const Profile = () => {
     <div>
       <h3 className="text-2xl font-semibold mb-6">Personal Information</h3>
       <div className="flex items-center space-x-4 mb-6">
-        <img
-          src="https://via.placeholder.com/100"
-          alt="Profile"
-          className="w-24 h-24 rounded-full bg-gray-500"
-        />
+        <div className="w-24 h-24 rounded-full bg-blue-600 text-white flex items-center justify-center text-2xl font-semibold">
+          {getInitials(profileData?.name ?? 'N/A')}
+        </div>
         <div>
           <h4 className="text-lg font-medium">{profileData?.name ?? 'No Name'}</h4>
           <button
