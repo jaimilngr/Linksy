@@ -93,6 +93,7 @@ export const MyServices = () => {
       const token = Cookies.get('token');
       const formData = new FormData();
       Object.keys(newService).forEach(key => {
+        //@ts-ignore
         formData.append(key, newService[key]);
       });
 
@@ -135,6 +136,7 @@ export const MyServices = () => {
       const token = Cookies.get('token');
       const formData = new FormData();
       Object.keys(newService).forEach(key => {
+        //@ts-ignore
         formData.append(key, newService[key]);
       });
 
