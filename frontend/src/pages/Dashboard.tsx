@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navbar } from '../components/Navbar';
+import { Navbar } from '../components/Uicomponents/Navbar';
 import { MyServices } from '../components/dashboardcomponents/MyServices';
 import { Password } from '../components/dashboardcomponents/Password';
 import { Profile } from '../components/dashboardcomponents/Profile';

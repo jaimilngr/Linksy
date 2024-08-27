@@ -2,9 +2,9 @@ import { motion } from "framer-motion";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { BACKEND_URL } from "../config";
+import { BACKEND_URL } from "../../config";
 import Cookies from "js-cookie";
-import { useAuth } from "../Context/Authcontext";
+import { useAuth } from "../../Context/Authcontext";
 
 interface SignInProps {
   handleGoBack: () => void;

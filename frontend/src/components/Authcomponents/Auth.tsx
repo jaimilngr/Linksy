@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import SignUp from "../components/Signup";
-import SignIn from "../components/Signin";
+import SignUp from "./Signup";
+import SignIn from "./Signin";
 
 export const Auth = () => {
   const [view, setView] = useState("initial");

@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import "../index.css";
+import "../../index.css";
 import { Mode } from "./Mode";
 import { Link as ScrollLink } from "react-scroll";
-import { useAuth } from '../Context/Authcontext';
+import { useAuth } from '../../Context/Authcontext';
 
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);

@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
-import { Cards } from "../components/Cards";
-import { Footer } from "../components/Footer";
-import Gains from "../components/Gains";
-import Hero from "../components/Hero";
-import { Service } from "../components/Listing";
-import { Navbar } from "../components/Navbar";
-import { Process } from "../components/process";
+import { Cards } from "../components/Homecomponents/Cards";
+import { Footer } from "../components/Homecomponents/Footer";
+import Gains from "../components/Homecomponents/Gains";
+import Hero from "../components/Homecomponents/Hero";
+import { Service } from "../components/Homecomponents/Listing";
+import { Navbar } from "../components/Uicomponents/Navbar";
+import { Process } from "../components/Homecomponents/process";
 import { Add_Data } from "../components/Add_data";
 import { BACKEND_URL } from "../config";
 import Cookies from "js-cookie";

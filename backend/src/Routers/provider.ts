@@ -155,6 +155,43 @@ serviceRouter.put('/update/:serviceid', async (c) => {
   }
 });
 
+serviceRouter.delete('/delete/:serviceid', async (c) => {
+  const prisma = new PrismaClient({
+    datasourceUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+
+  try {
+    const user = (c.req as any).user;
+    const { serviceid } = c.req.param();
+
+    const existingService = await prisma.service.findUnique({
+      where: {
+        id: serviceid,
+      },
+    });
+
+    if (!existingService) {
+      return c.json({ error: 'Service not found' }, 404);
+    }
+
+    if (existingService.providerId !== user.id) {
+      return c.json({ error: 'Unauthorized' }, 403);
+    }
+
+    await prisma.service.delete({
+      where: {
+        id: serviceid,
+      },
+    });
+
+    return c.json({ message: 'Service deleted successfully' }, 200);
+
+  } catch (error: any) {
+    console.error('Error deleting service:', error);
+    return c.json({ error: 'Failed to delete service', details: error.message }, 500);
+  }
+});
+
 serviceRouter.get('/closest', async (c) => {
   const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,

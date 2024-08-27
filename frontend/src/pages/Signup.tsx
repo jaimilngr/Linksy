@@ -1,5 +1,5 @@
-import { Auth } from "../components/Auth";
-import { Slideshow } from "../components/slideshow";
+import { Auth } from "../components/Authcomponents/Auth";
+import { Slideshow } from "../components/Authcomponents/slideshow";
 
 export const Signup = () => {
   return (

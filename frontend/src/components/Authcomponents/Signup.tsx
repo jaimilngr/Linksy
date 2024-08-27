@@ -2,12 +2,11 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { BACKEND_URL } from "../config";
+import { BACKEND_URL } from "../../config";
 import Cookies from "js-cookie";
-import { useAuth } from "../Context/Authcontext";
+import { useAuth } from "../../Context/Authcontext";
 import { SignupType } from "@jaimil/linksy";
 import { Role } from "./Role";
-
 interface SignUpProps {
   handleGoBack: () => void;
 }

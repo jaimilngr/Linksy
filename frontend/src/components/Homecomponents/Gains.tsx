@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { gsap } from 'gsap';
 import ScrollTrigger from 'gsap/ScrollTrigger';
 import Draggable from 'gsap/Draggable';
-import '../styles.scss';
+import '../../styles.scss';
 
 gsap.registerPlugin(ScrollTrigger, Draggable);
 
