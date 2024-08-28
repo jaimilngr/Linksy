@@ -40,6 +40,7 @@ export const MyServices = () => {
     lat: null as number | null,
     lng: null as number | null,
   });
+  const [editServiceId, setEditServiceId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{
@@ -67,18 +68,36 @@ export const MyServices = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          setUserLocation({
+          const userCoords = {
             lat: position.coords.latitude,
             lng: position.coords.longitude,
-          });
+          };
+          setUserLocation(userCoords);
+          setNewService((prevState) => ({
+            ...prevState,
+            lat: userCoords.lat,
+            lng: userCoords.lng,
+          }));
         },
         (error) => {
           console.error("Error fetching location:", error);
-          setUserLocation({ lat: 51.505, lng: -0.09 });
+          const defaultCoords = { lat: 23.0225, lng: 72.5714 };
+          setUserLocation(defaultCoords);
+          setNewService((prevState) => ({
+            ...prevState,
+            lat: defaultCoords.lat,
+            lng: defaultCoords.lng,
+          }));
         }
       );
     } else {
-      setUserLocation({ lat: 51.505, lng: -0.09 });
+      const defaultCoords = { lat: 23.0225, lng: 72.5714 };
+      setUserLocation(defaultCoords);
+      setNewService((prevState) => ({
+        ...prevState,
+        lat: defaultCoords.lat,
+        lng: defaultCoords.lng,
+      }));
     }
 
     const fetchServices = async () => {
@@ -103,7 +122,6 @@ export const MyServices = () => {
     fetchServices();
   }, []);
 
-  
   const handleCreateService = async () => {
     try {
       const token = Cookies.get("token");
@@ -145,7 +163,7 @@ export const MyServices = () => {
     }
   };
 
-  const handleUpdateService = async () => {
+  const handleUpdateService = async (service:any) => {
     try {
       const token = Cookies.get("token");
 
@@ -174,6 +192,7 @@ export const MyServices = () => {
         lng: null,
       });
       setShowEditForm(false);
+      setEditServiceId(service.id);
 
       const { data } = await axios.get(
         `${BACKEND_URL}/api/v1/service/myservices`,
@@ -214,25 +233,17 @@ export const MyServices = () => {
       setSuccessMessage(null);
     }
   };
-  
+
   const handleInputChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
     >
   ) => {
     const { name, value } = e.target;
-    setNewService(prevState => ({
+    setNewService((prevState) => ({
       ...prevState,
-      [name]: name === 'price' ? Number(value) : value
+      [name]: name === "price" ? Number(value) : value,
     }));
-  };
-
-  const handleMapClick = (e: L.LeafletMouseEvent) => {
-    setNewService({
-      ...newService,
-      lat: e.latlng.lat,
-      lng: e.latlng.lng,
-    });
   };
 
   const handleEditService = (service: any) => {
@@ -248,46 +259,70 @@ export const MyServices = () => {
       lat: service.lat,
       lng: service.lng,
     });
+    setEditServiceId(service.id);
+    setShowCreateForm(false);
     setShowEditForm(true);
   };
 
+  const handleCreateForm = () => {
+    setNewService({
+      id: null,
+      serviceType: "",
+      name: "",
+      description: "",
+      price: 0,
+      timing: "",
+      category: "",
+      contactNo: "",
+      lat: null,
+      lng: null,
+    });
+    setShowCreateForm(true);
+    setShowEditForm(false);
+  };
   const LocationMap = () => {
     const map = useMap();
+    const [markerPosition, setMarkerPosition] = useState<
+      [number, number] | null
+    >(null);
 
     useEffect(() => {
       if (userLocation) {
+        setMarkerPosition([userLocation.lat, userLocation.lng]);
         map.setView([userLocation.lat, userLocation.lng], 13);
       }
     }, [userLocation, map]);
 
+    useEffect(() => {
+      if (newService.lat && newService.lng) {
+        setMarkerPosition([newService.lat, newService.lng]);
+        map.setView([newService.lat, newService.lng], 13);
+      }
+    }, [newService, map]);
+
     useMapEvents({
       click(e) {
-        handleMapClick(e);
+        setNewService({
+          ...newService,
+          lat: e.latlng.lat,
+          lng: e.latlng.lng,
+        });
       },
     });
 
-    return (
-      <>
-        {newService.lat && newService.lng && (
-          <Marker position={[newService.lat, newService.lng]} />
-        )}
-        {!newService.lat && !newService.lng && userLocation && (
-          <Marker position={[userLocation.lat, userLocation.lng]} />
-        )}
-      </>
-    );
+    return markerPosition ? <Marker position={markerPosition} /> : null;
   };
-  const servicesArray = Array.isArray(services) ? services : [];
 
+  const servicesArray = Array.isArray(services) ? services : [];
   return (
     <div>
       <h3 className="text-2xl font-semibold mb-6">My Services</h3>
-  
+
       {successMessage && (
         <p className="text-green-600 mb-4">{successMessage}</p>
       )}
       {error && <p className="text-red-600 mb-4">{error}</p>}
-  
+
       {loading ? (
         <div className="sliding-bars absolute inset-0">
           <div></div>
@@ -302,10 +337,10 @@ export const MyServices = () => {
         <div className="mt-6">
           <h4 className="text-xl font-semibold mb-4">Your Services</h4>
           <ul className="space-y-4">
-          {servicesArray.map((service) => (
+            {servicesArray.map((service) => (
               <li
                 key={service.id}
-                className="p-4 border border-gray-300 rounded bg-white dark:bg-[#374151]"
+                className="p-4 border border-gray-300 rounded bg-[#bfcae8] dark:bg-[#374151] relative"
               >
                 <h5 className="text-lg font-semibold">{service.name}</h5>
                 <p>{service.description}</p>
@@ -335,14 +370,152 @@ export const MyServices = () => {
                     Delete
                   </button>
                 </div>
+
+                {editServiceId === service.id && (
+                  <div className="mt-4 border-gray-500 p-4 rounded">
+                    <h4 className="text-xl font-semibold mb-4">Edit Service</h4>
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        handleUpdateService(service.id);
+                      }}
+                      className="space-y-4"
+                    >
+                      <div>
+                        <label className="block ">
+                          Service Type
+                        </label>
+                        <input
+                          type="text"
+                          name="serviceType"
+                          value={newService.serviceType}
+                          onChange={handleInputChange}
+                          className="border border-gray-300 rounded p-2 w-full dark:bg-[#374151]"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block ">Name</label>
+                        <input
+                          type="text"
+                          name="name"
+                          value={newService.name}
+                          onChange={handleInputChange}
+                          className="border border-gray-300 rounded p-2 w-full dark:bg-[#374151]"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block ">
+                          Description
+                        </label>
+                        <textarea
+                          name="description"
+                          value={newService.description}
+                          onChange={handleInputChange}
+                          className="border border-gray-300 rounded p-2 w-full dark:bg-[#374151]"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block ">Price</label>
+                        <input
+                          type="number"
+                          name="price"
+                          value={newService.price}
+                          onChange={handleInputChange}
+                          className="border border-gray-300 rounded p-2 w-full dark:bg-[#374151]"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block ">Timing</label>
+                        <input
+                          type="text"
+                          name="timing"
+                          value={newService.timing}
+                          onChange={handleInputChange}
+                          className="border border-gray-300 rounded p-2 w-full dark:bg-[#374151]"
+                          required
+                        />
+                      </div>
+                      <div>
+                        <label className="block ">Category</label>
+                        <select
+                          name="category"
+                          value={newService.category}
+                          onChange={handleInputChange}
+                          className="border border-gray-300 rounded p-2 w-full dark:bg-[#374151]"
+                          required
+                        >
+                          <option value="" disabled>
+                            Select a category
+                          </option>
+                          {categories.map((cat) => (
+                            <option key={cat} value={cat}>
+                              {cat}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block ">
+                          Contact No
+                        </label>
+                        <input
+                          type="text"
+                          name="contactNo"
+                          value={newService.contactNo}
+                          onChange={handleInputChange}
+                          className="border border-gray-300 rounded p-2 w-full dark:bg-[#374151]"
+                          required
+                        />
+                      </div>
+                      <div className="mt-4">
+                        <MapContainer
+                          center={[
+                            newService.lat || 23.0225,
+                            newService.lng || 72.5714,
+                          ]}
+                          zoom={13}
+                          style={{ height: "300px", width: "100%" }}
+                        >
+                          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                          <LocationMap />
+                        </MapContainer>
+                      </div>
+                      <div className="mt-4">
+                        <button
+                          type="submit"
+                          className="bg-blue-500 text-white px-4 py-2 rounded"
+                        >
+                          Update Service
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditServiceId(null)}
+                          className="bg-gray-500 text-white px-4 py-2 rounded ml-2"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                )}
               </li>
             ))}
           </ul>
         </div>
       )}
-  
+
+      <button
+        onClick={handleCreateForm}
+        className="bg-blue-500 text-white px-4 py-2 rounded mt-6"
+      >
+        Add New Service
+      </button>
       {showCreateForm && (
-        <div className="mt-6">
+        <div className="mt-6 bg-[#bfcae8] dark:bg-[#374151] p-5">
           <h4 className="text-xl font-semibold mb-4">Create New Service</h4>
           <form
             onSubmit={(e) => {
@@ -352,61 +525,75 @@ export const MyServices = () => {
             className="space-y-4"
           >
             <div>
-              <label className="block text-gray-700">Service Type</label>
-              <input
-                type="text"
+              <label
+                htmlFor="serviceType"
+                className="block text-sm font-medium  dark:text-gray-300"
+              >
+                Service Type
+              </label>
+              <select
                 name="serviceType"
                 value={newService.serviceType}
                 onChange={handleInputChange}
-                className="border border-gray-300 rounded p-2 w-full  dark:bg-[#374151]"
+                className="border border-gray-300 rounded p-2 w-full dark:bg-[#374151]"
                 required
-              />
+              >
+                <option value="" disabled>
+                  Select a service type
+                </option>
+                <option value="Offline">Offline</option>
+                <option value="Online">Online</option>
+              </select>
             </div>
             <div>
-              <label className="block text-gray-700">Name</label>
+              <label className="block ">Name</label>
               <input
                 type="text"
                 name="name"
                 value={newService.name}
                 onChange={handleInputChange}
+                placeholder="eg. Jaipie Services"
                 className="border border-gray-300 rounded p-2 w-full dark:bg-[#374151] "
                 required
               />
             </div>
             <div>
-              <label className="block text-gray-700">Description</label>
+              <label className="block ">Description</label>
               <textarea
                 name="description"
                 value={newService.description}
                 onChange={handleInputChange}
+                placeholder="Write something about your services"
                 className="border border-gray-300 rounded p-2 w-full dark:bg-[#374151]"
                 required
               />
             </div>
             <div>
-              <label className="block text-gray-700">Price</label>
+              <label className="block ">Price</label>
               <input
                 type="number"
                 name="price"
                 value={newService.price}
+                placeholder="Rupees"
                 onChange={handleInputChange}
                 className="border border-gray-300 rounded p-2 w-full dark:bg-[#374151]"
                 required
               />
             </div>
             <div>
-              <label className="block text-gray-700">Timing</label>
+              <label className="block ">Timing</label>
               <input
                 type="text"
                 name="timing"
                 value={newService.timing}
                 onChange={handleInputChange}
+                placeholder="eg. 9 am - 9 pm"
                 className="border border-gray-300 rounded p-2 w-full dark:bg-[#374151]"
                 required
               />
             </div>
             <div>
-              <label className="block text-gray-700">Category</label>
+              <label className="block ">Category</label>
               <select
                 name="category"
                 value={newService.category}
@@ -414,7 +601,9 @@ export const MyServices = () => {
                 className="border border-gray-300 rounded p-2 w-full dark:bg-[#374151]"
                 required
               >
-                <option value="" disabled>Select a category</option>
+                <option value="" disabled>
+                  Select a category
+                </option>
                 {categories.map((cat) => (
                   <option key={cat} value={cat}>
                     {cat}
@@ -423,25 +612,28 @@ export const MyServices = () => {
               </select>
             </div>
             <div>
-              <label className="block text-gray-700">Contact No</label>
+              <label className="block ">Contact No</label>
               <input
                 type="text"
                 name="contactNo"
                 value={newService.contactNo}
                 onChange={handleInputChange}
+                placeholder="eg. 1234567890"
                 className="border border-gray-300 rounded p-2 w-full dark:bg-[#374151]"
                 required
               />
             </div>
-            <div className="mt-4">
+            <div className="mt-4 z-[-1]">
               <MapContainer
-                center={[userLocation?.lat || 51.505, userLocation?.lng || -0.09]}
+                center={[
+                  userLocation?.lat || 23.0225,
+                  userLocation?.lng || 72.5714,
+                ]}
                 zoom={13}
                 style={{ height: "300px", width: "100%" }}
+                className="z-0"
               >
-                <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
                 <LocationMap />
               </MapContainer>
             </div>
@@ -463,136 +655,6 @@ export const MyServices = () => {
           </form>
         </div>
       )}
-  
-      {showEditForm && (
-        <div className="mt-6">
-          <h4 className="text-xl font-semibold mb-4">Edit Service</h4>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleUpdateService();
-            }}
-            className="space-y-4"
-          >
-            <div>
-              <label className="block text-gray-700">Service Type</label>
-              <input
-                type="text"
-                name="serviceType"
-                value={newService.serviceType}
-                onChange={handleInputChange}
-                className="border border-gray-300 rounded p-2 w-full dark:bg-[#374151]"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-gray-700">Name</label>
-              <input
-                type="text"
-                name="name"
-                value={newService.name}
-                onChange={handleInputChange}
-                className="border border-gray-300 rounded p-2 w-full dark:bg-[#374151]"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-gray-700">Description</label>
-              <textarea
-                name="description"
-                value={newService.description}
-                onChange={handleInputChange}
-                className="border border-gray-300 rounded p-2 w-full dark:bg-[#374151]"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-gray-700">Price</label>
-              <input
-                type="number"
-                name="price"
-                value={newService.price}
-                onChange={handleInputChange}
-                className="border border-gray-300 rounded p-2 w-full dark:bg-[#374151]"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-gray-700">Timing</label>
-              <input
-                type="text"
-                name="timing"
-                value={newService.timing}
-                onChange={handleInputChange}
-                className="border border-gray-300 rounded p-2 w-full dark:bg-[#374151]"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-gray-700">Category</label>
-              <select
-                name="category"
-                value={newService.category}
-                onChange={handleInputChange}
-                className="border border-gray-300 rounded p-2 w-full dark:bg-[#374151]"
-                required
-              >
-                <option value="" disabled>Select a category</option>
-                {categories.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-gray-700">Contact No</label>
-              <input
-                type="text"
-                name="contactNo"
-                value={newService.contactNo}
-                onChange={handleInputChange}
-                className="border border-gray-300 rounded p-2 w-full dark:bg-[#374151]"
-                required
-              />
-            </div>
-            <div className="mt-4">
-              <MapContainer
-                center={[userLocation?.lat || 51.505, userLocation?.lng || -0.09]}
-                zoom={13}
-                style={{ height: "300px", width: "100%" }}
-              >
-                <TileLayer
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                <LocationMap />
-              </MapContainer>
-            </div>
-            <div className="mt-4">
-              <button
-                type="submit"
-                className="bg-blue-500 text-white px-4 py-2 rounded"
-              >
-                Update Service
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowEditForm(false)}
-                className="bg-gray-500 text-white px-4 py-2 rounded ml-2"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-  
-      <button
-        onClick={() => setShowCreateForm(true)}
-        className="bg-blue-500 text-white px-4 py-2 rounded mt-6"
-      >
-        Add New Service
-      </button>
     </div>
   );
 };
