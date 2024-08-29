@@ -40,7 +40,7 @@ export const MyServices = () => {
     lat: null as number | null,
     lng: null as number | null,
   });
-  const [editServiceId, setEditServiceId] = useState<number | null>(null);
+  const [editServiceId, setEditServiceId] = useState<number | null | boolean>(null);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{
@@ -48,7 +48,6 @@ export const MyServices = () => {
     lng: number;
   } | null>(null);
   const [showCreateForm, setShowCreateForm] = useState<boolean>(false);
-  const [showEditForm, setShowEditForm] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
 
   const categories = [
@@ -191,7 +190,6 @@ export const MyServices = () => {
         lat: null,
         lng: null,
       });
-      setShowEditForm(false);
       setEditServiceId(service.id);
 
       const { data } = await axios.get(
@@ -261,7 +259,6 @@ export const MyServices = () => {
     });
     setEditServiceId(service.id);
     setShowCreateForm(false);
-    setShowEditForm(true);
   };
 
   const handleCreateForm = () => {
@@ -278,7 +275,7 @@ export const MyServices = () => {
       lng: null,
     });
     setShowCreateForm(true);
-    setShowEditForm(false);
+    setEditServiceId(false);
   };
   const LocationMap = () => {
     const map = useMap();
