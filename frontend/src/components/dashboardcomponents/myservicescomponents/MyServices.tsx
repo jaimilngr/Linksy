@@ -122,6 +122,38 @@ export const MyServices = () => {
   }, []);
 
   const handleCreateService = async () => {
+    try{
+
+      if (newService.lat === null || newService.lng === null) {
+        console.log("Location is null, trying to fetch again...");
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const userCoords = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            };
+            setNewService((prevState) => ({
+              ...prevState,
+              lat: userCoords.lat,
+              lng: userCoords.lng,
+            }));
+          },
+          (error) => {
+            console.error("Error fetching location:", error);
+            const defaultCoords = { lat: 23.0225, lng: 72.5714 };
+            setNewService((prevState) => ({
+              ...prevState,
+              lat: defaultCoords.lat,
+              lng: defaultCoords.lng,
+            }));
+          }
+        );
+        return; 
+      }
+    }
+      catch(err){
+          alert("location not set please select on map");
+      }
     try {
       const token = Cookies.get("token");
 
@@ -326,7 +358,7 @@ export const MyServices = () => {
           <div></div>
           <div></div>
         </div>
-      ) : services.length === 0 ? (
+      ) : servicesArray.length === 0 ? (
         <p className="text-gray-600 mb-4">
           You do not have any services. Create a new service below.
         </p>

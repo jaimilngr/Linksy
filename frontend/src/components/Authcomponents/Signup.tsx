@@ -65,7 +65,7 @@ const SignUp: React.FC<SignUpProps> = ({ handleGoBack }) => {
       console.error("Sign-up error:", error);
       alert("Error while signing up");
     } finally {
-      setLoading(false); // Hide loading spinner
+      setLoading(false); 
     }
   };
 
@@ -88,7 +88,7 @@ const SignUp: React.FC<SignUpProps> = ({ handleGoBack }) => {
           >
             &times;
           </button>
-          <p className="font-sans text-5xl text-white font-bold mb-8 mt-5">
+          <p className="font-sans text-4xl md:text-5xl text-white font-bold mb-8 mt-5 ">
             Create an Account
           </p>
           <form

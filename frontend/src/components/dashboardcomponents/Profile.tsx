@@ -2,21 +2,23 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { BACKEND_URL } from '../../config';
 import Cookies from 'js-cookie';
+import { useAuth } from '../../Context/Authcontext';
 
 export const Profile = () => {
   const [profileData, setProfileData] = useState<{
     name: string;
     email: string;
     contactNo: string;
-    address?: string; // Optional address field
+    address?: string; 
   } | null>(null);
   const [loading, setLoading] = useState(true);
+  const { setAuthState } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<{
     name: string;
     email: string;
     contactNo: string;
-    address?: string; // Optional address field
+    address?: string;
   }>({
     name: '',
     email: '',
@@ -69,6 +71,12 @@ export const Profile = () => {
         },
       });
       setProfileData(formData);
+      setAuthState({
+        authUser: formData.name,
+         isLoggedIn: true,
+        role: role || null,
+        token: token || null,
+      });
     } catch (error) {
       console.error('Error updating profile:', error);
     } finally {
