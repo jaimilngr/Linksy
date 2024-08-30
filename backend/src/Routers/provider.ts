@@ -27,7 +27,10 @@ interface ClosestServicesBody {
   category: string;
 }
 
-serviceRouter.use('*', jwtAuthMiddleware);
+serviceRouter.use('/create', jwtAuthMiddleware);
+serviceRouter.use('/myservices', jwtAuthMiddleware);
+serviceRouter.use('/update/:serviceid', jwtAuthMiddleware);
+serviceRouter.use('/delete/:serviceid', jwtAuthMiddleware);
 
 serviceRouter.post('/create', async (c) => {
   const user = (c.req as any).user;
@@ -192,19 +195,52 @@ serviceRouter.delete('/delete/:serviceid', async (c) => {
   }
 });
 
+// Public endpoint: no authentication required
 serviceRouter.get('/closest', async (c) => {
   const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());
 
   try {
-    const { latitude, longitude, category }: ClosestServicesBody = await c.req.json();
+    const latitudeQuery = c.req.query('latitude');
+    const longitudeQuery = c.req.query('longitude');
+    const category = c.req.query('category');
+
+    if (!latitudeQuery || !longitudeQuery || !category) {
+      return c.json({ error: 'Missing parameters' }, 400);
+    }
+
+    const latitude = parseFloat(latitudeQuery);
+    const longitude = parseFloat(longitudeQuery);
+
+    if (isNaN(latitude) || isNaN(longitude)) {
+      return c.json({ error: 'Invalid latitude or longitude' }, 400);
+    }
+
+    if (typeof category !== 'string') {
+      return c.json({ error: 'Invalid category' }, 400);
+    }
 
     const services = await prisma.service.findMany({
       where: {
         category: category,
       },
+      select: {
+        id: true,
+        providerId: true,
+        name: true,
+        description: true,
+        price: true,
+        timing: true,
+        contactNo: true,
+        latitude: true, 
+        longitude: true, 
+      },
     });
+
+    if (services.length === 0) {
+      return c.json([], 200);
+    }
 
     const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
       const R = 6371; 
@@ -212,7 +248,7 @@ serviceRouter.get('/closest', async (c) => {
       const dLng = (lng2 - lng1) * (Math.PI / 180);
       const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLng / 2) ** 2;
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c; 
+      return R * c;
     };
 
     const servicesWithDistance = services.map(service => {
@@ -222,11 +258,13 @@ serviceRouter.get('/closest', async (c) => {
 
     servicesWithDistance.sort((a, b) => a.distance - b.distance);
 
-    return c.json(servicesWithDistance);
+    return c.json(servicesWithDistance, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
   } catch (error: any) {
     console.error('Error retrieving closest services:', error);
     return c.json({ error: 'Failed to retrieve closest services', details: error.message }, 500);
   }
 });
-
-export default serviceRouter;

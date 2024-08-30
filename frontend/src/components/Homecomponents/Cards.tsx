@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 
 type CardProps = {
   title: string;
@@ -7,13 +8,17 @@ type CardProps = {
 
 const Card = ({ title, image }: CardProps) => {
   return (
-    <motion.div
-      className="flex flex-col justify-center items-center bg-[#e2e5ee] mx-8 dark:bg-secondary py-3 md:py-4 shadow-md rounded-2xl aspect-w-1 aspect-h-1 mb-2"
-      whileHover={{ scale: 1.1 }}
-    >
-      <img src={image} alt={title} className="mb-2 w-16 h-16" />
-      <span className="text-center text-sm md:text-lg xl:text-xl font-semibold">{title}</span>
-    </motion.div>
+    <Link to={`/categories/${title}`}>
+      <motion.div
+        className="flex flex-col justify-center items-center bg-[#e2e5ee] mx-8 dark:bg-secondary py-3 md:py-4 shadow-md rounded-2xl aspect-w-1 aspect-h-1 mb-2"
+        whileHover={{ scale: 1.1 }}
+      >
+        <img src={image} alt={title} className="mb-2 w-16 h-16" />
+        <span className="text-center text-sm md:text-lg xl:text-xl font-semibold">
+          {title}
+        </span>
+      </motion.div>
+    </Link>
   );
 };
 
@@ -38,7 +43,6 @@ export const Cards = () => {
       <div className="text-4xl font-bold">
         Browse Services
       </div>
-
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 px-6 mt-10">
         {cardData.slice(0, numberOfCardsToDisplay).map((data, index) => (
           <Card key={index} title={data.title} image={data.image} />

@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import "../../index.css";
 import { Mode } from "./Mode";
 import { Link as ScrollLink } from "react-scroll";
-import { useAuth } from '../../Context/Authcontext';
+import { useAuth } from "../../Context/Authcontext";
 
 export const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,7 +12,7 @@ export const Navbar = () => {
   const [showNavbar, setShowNavbar] = useState(true);
   const navigate = useNavigate();
   const authContext = useAuth();
-  
+
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleToggle = () => {
@@ -33,6 +33,28 @@ export const Navbar = () => {
     }
   };
 
+   const handleLocationUpdate = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const latitude = position.coords.latitude;
+          const longitude = position.coords.longitude;
+
+          localStorage.setItem('latitude', latitude.toString());
+          localStorage.setItem('longitude', longitude.toString());
+
+          window.location.reload();
+
+        },
+        (error) => {
+          console.error('Error getting location:', error.message);
+        }
+      );
+    } else {
+      console.error('Geolocation is not supported by this browser.');
+    }
+  };
+
   const navItems = [
     { to: "/", label: "Services", current: true },
     { to: "your-Gains", label: "Your Gains" },
@@ -44,7 +66,7 @@ export const Navbar = () => {
     const handleScroll = () => {
       if (window.scrollY > lastScrollY) {
         setShowNavbar(false);
-        setIsDropdownOpen(false); 
+        setIsDropdownOpen(false);
       } else {
         setShowNavbar(true);
       }
@@ -52,13 +74,16 @@ export const Navbar = () => {
     };
 
     window.addEventListener("scroll", handleScroll);
-    
+
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsDropdownOpen(false);
       }
     };
@@ -76,14 +101,46 @@ export const Navbar = () => {
   const { authUser, isLoggedIn } = authContext;
 
   return (
-    <nav className={`z-20 top-0 start-0 border-b border-gray-400 bg-background dark:bg-background sticky transition-transform duration-300 ${showNavbar ? 'translate-y-0' : '-translate-y-full'}`}>
+    <nav
+      className={`z-20 top-0 start-0 border-b border-gray-400 bg-background dark:bg-background sticky transition-transform duration-300 ${
+        showNavbar ? "translate-y-0" : "-translate-y-full"
+      }`}
+    >
       <div className="flex flex-wrap items-center justify-between py-5 px-6">
-        <Link to="/" className="flex items-center space-x-3 rtl:space-x-reverse">
+        <Link
+          to="/"
+          className="flex items-center space-x-3 rtl:space-x-reverse"
+        >
           <span className="self-center text-2xl font-bold whitespace-nowrap sm:text-4xl">
             Linksy
           </span>
         </Link>
+
         <div className="flex md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse">
+        <div
+  className="self-center mr-3 cursor-pointer"
+  onClick={handleLocationUpdate} 
+>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth={1.5}
+    stroke="currentColor"
+    className="size-8"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+    />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"
+    />
+  </svg>
+</div>
           <div className="self-center">
             <Mode />
           </div>
@@ -91,24 +148,44 @@ export const Navbar = () => {
             {isLoggedIn ? (
               <div className="relative" ref={dropdownRef}>
                 <button onClick={handleDropdownToggle}>
-                  <img id="avatarButton" className="w-14 h-14 rounded-full cursor-pointer mx-3" src="https://img.icons8.com/stickers/100/user-male-circle.png" alt="User dropdown"/>
+                  <img
+                    id="avatarButton"
+                    className="w-14 h-14 rounded-full cursor-pointer mx-3"
+                    src="https://img.icons8.com/stickers/100/user-male-circle.png"
+                    alt="User dropdown"
+                  />
                 </button>
                 {isDropdownOpen && (
                   <div className="absolute right-0 z-10 bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700 dark:divide-gray-600">
                     <div className="px-4 py-3 text-sm text-gray-900 dark:text-white">
                       <div>{authUser}</div>
                     </div>
-                    <ul className="py-2 text-sm text-gray-700 dark:text-gray-200" aria-labelledby="avatarButton">
-                    <li>
-                        <p className="block px-4 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Notifications</p>
+                    <ul
+                      className="py-2 text-sm text-gray-700 dark:text-gray-200"
+                      aria-labelledby="avatarButton"
+                    >
+                      <li>
+                        <p className="block px-4 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
+                          Notifications
+                        </p>
                       </li>
                       <li>
-                        <Link to="/dashboard" className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">Settings</Link>
+                        <Link
+                          to="/dashboard"
+                          className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+                        >
+                          Settings
+                        </Link>
                       </li>
-                      
                     </ul>
                     <div className="py-1">
-                      <Link to="/" onClick={handleSignOut} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white">Sign out</Link>
+                      <Link
+                        to="/"
+                        onClick={handleSignOut}
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white"
+                      >
+                        Sign out
+                      </Link>
                     </div>
                   </div>
                 )}
@@ -149,7 +226,9 @@ export const Navbar = () => {
           </button>
         </div>
         <div
-          className={`absolute top-full right-0 w-full md:w-auto md:flex md:items-center md:justify-between md:relative md:bg-background md:dark:bg-background ${isOpen ? "block border-zinc-200 border-t-2" : "hidden"} `}
+          className={`absolute top-full right-0 w-full md:w-auto md:flex md:items-center md:justify-between md:relative md:bg-background md:dark:bg-background ${
+            isOpen ? "block border-zinc-200 border-t-2" : "hidden"
+          } `}
           aria-expanded={isOpen}
         >
           <ul className="flex flex-col text-xl p-4 md:p-0 bg-background text-right font-light rounded-lg md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0 dark:bg-background z-50">
@@ -157,7 +236,11 @@ export const Navbar = () => {
               <li key={index} className="relative group">
                 <ScrollLink
                   to={item.to}
-                  className={`block py-2 px-3 rounded md:bg-transparent md:p-0 ${item.current ? "text-blue-700" : "dark:text-gray-300 hover:text-blue-700"}`}
+                  className={`block py-2 px-3 rounded md:bg-transparent md:p-0 ${
+                    item.current
+                      ? "text-blue-700"
+                      : "dark:text-gray-300 hover:text-blue-700"
+                  }`}
                   aria-current={item.current ? "page" : undefined}
                 >
                   {item.label}
@@ -170,6 +253,7 @@ export const Navbar = () => {
           </ul>
         </div>
       </div>
+   
     </nav>
   );
 };

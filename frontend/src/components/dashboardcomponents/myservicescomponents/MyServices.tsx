@@ -14,6 +14,7 @@ import L from "leaflet";
 import iconUrl from "leaflet/dist/images/marker-icon.png";
 import iconRetinaUrl from "leaflet/dist/images/marker-icon-2x.png";
 import shadowUrl from "leaflet/dist/images/marker-shadow.png";
+import { categories } from "../../../data/categories";
 
 L.Marker.prototype.options.icon = L.icon({
   iconUrl,
@@ -40,7 +41,9 @@ export const MyServices = () => {
     lat: null as number | null,
     lng: null as number | null,
   });
-  const [editServiceId, setEditServiceId] = useState<number | null | boolean>(null);
+  const [editServiceId, setEditServiceId] = useState<number | null | boolean>(
+    null
+  );
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [userLocation, setUserLocation] = useState<{
@@ -49,19 +52,6 @@ export const MyServices = () => {
   } | null>(null);
   const [showCreateForm, setShowCreateForm] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
-
-  const categories = [
-    "Tech",
-    "Cleaning",
-    "AC Service",
-    "Painting Contractor",
-    "Courier Service",
-    "Catering",
-    "Event Organizer",
-    "Home Decoration",
-    "Laptop Repair",
-    "Consultant",
-  ];
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -122,8 +112,7 @@ export const MyServices = () => {
   }, []);
 
   const handleCreateService = async () => {
-    try{
-
+    try {
       if (newService.lat === null || newService.lng === null) {
         console.log("Location is null, trying to fetch again...");
         navigator.geolocation.getCurrentPosition(
@@ -148,12 +137,11 @@ export const MyServices = () => {
             }));
           }
         );
-        return; 
+        return;
       }
+    } catch (err) {
+      alert("location not set please select on map");
     }
-      catch(err){
-          alert("location not set please select on map");
-      }
     try {
       const token = Cookies.get("token");
 
@@ -194,7 +182,7 @@ export const MyServices = () => {
     }
   };
 
-  const handleUpdateService = async (service:any) => {
+  const handleUpdateService = async (service: any) => {
     try {
       const token = Cookies.get("token");
 
@@ -411,18 +399,27 @@ export const MyServices = () => {
                       className="space-y-4"
                     >
                       <div>
-                        <label className="block ">
+                        <label
+                          htmlFor="serviceType"
+                          className="block text-sm font-medium  dark:text-gray-300"
+                        >
                           Service Type
                         </label>
-                        <input
-                          type="text"
+                        <select
                           name="serviceType"
                           value={newService.serviceType}
                           onChange={handleInputChange}
                           className="border border-gray-300 rounded p-2 w-full dark:bg-[#374151]"
                           required
-                        />
+                        >
+                          <option value="" disabled>
+                            Select a service type
+                          </option>
+                          <option value="Offline">Offline</option>
+                          <option value="Online">Online</option>
+                        </select>
                       </div>
+
                       <div>
                         <label className="block ">Name</label>
                         <input
@@ -435,9 +432,7 @@ export const MyServices = () => {
                         />
                       </div>
                       <div>
-                        <label className="block ">
-                          Description
-                        </label>
+                        <label className="block ">Description</label>
                         <textarea
                           name="description"
                           value={newService.description}
@@ -488,9 +483,7 @@ export const MyServices = () => {
                         </select>
                       </div>
                       <div>
-                        <label className="block ">
-                          Contact No
-                        </label>
+                        <label className="block ">Contact No</label>
                         <input
                           type="text"
                           name="contactNo"
