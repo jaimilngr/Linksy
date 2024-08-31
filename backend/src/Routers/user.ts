@@ -1,7 +1,7 @@
 import { PrismaClient } from "@prisma/client/edge";
 import { withAccelerate } from "@prisma/extension-accelerate";
 import { Hono } from "hono";
-import {  sign, verify } from "hono/jwt";
+import { sign, verify } from "hono/jwt";
 import { signupInput, signinInput } from '@jaimil/linksy';
 
 export const authRouter = new Hono<{
@@ -36,7 +36,7 @@ authRouter.post("/signup", async (c) => {
   const body = await c.req.json();
 
   console.log("Received request body:", body);
-  
+
   const result = signupInput.safeParse(body);
   if (!result.success) {
     c.status(400);
@@ -48,6 +48,49 @@ authRouter.post("/signup", async (c) => {
   }).$extends(withAccelerate());
 
   try {
+    // Check if user or service provider with the same email or contact number already exists
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: body.email },
+          { contactNo: body.contactNo }
+        ]
+      }
+    });
+
+    if (existingUser) {
+      const errorResponse = {
+        error: "User already exists",
+        fields: {
+          email: existingUser.email === body.email ? "Email already in use" : "",
+          contactNo: existingUser.contactNo === body.contactNo ? "Contact number already in use" : ""
+        }
+      };
+      c.status(409);
+      return c.json(errorResponse);
+    }
+
+    const existingServiceProvider = await prisma.serviceProvider.findFirst({
+      where: {
+        OR: [
+          { email: body.email },
+          { contactNo: body.contactNo }
+        ]
+      }
+    });
+
+    if (existingServiceProvider) {
+      const errorResponse = {
+        error: "Service provider already exists",
+        fields: {
+          email: existingServiceProvider.email === body.email ? "Email already in use" : "",
+          contactNo: existingServiceProvider.contactNo === body.contactNo ? "Contact number already in use" : ""
+        }
+      };
+      c.status(409);
+      return c.json(errorResponse);
+    }
+
     let user;
     if (body.role === 'service') {
       user = await prisma.serviceProvider.create({
@@ -88,15 +131,14 @@ authRouter.post("/signup", async (c) => {
     });
 
   } catch (e) {
-    console.error("Error creating user:", e); 
-    c.status(409);
+    console.error("Error creating user:", e);
+    c.status(500);
     return c.json({
-      error: "User already exists with the same email or contact number"
+      error: "Internal server error"
     });
   }
 });
 
-// Sign-in route
 authRouter.post("/signin", async (c) => {
   const body = await c.req.json();
 
@@ -110,24 +152,11 @@ authRouter.post("/signin", async (c) => {
     datasourceUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());
 
-  let user;
-  let role: "user" | "service" | null = null;
+  try {
+    let user;
+    let role: "user" | "service" | null = null;
 
-  user = await prisma.user.findUnique({
-    where: {
-      email: body.email,
-      password: body.password
-    },
-    select: {
-      id: true,
-      name: true
-    }
-  });
-
-  if (user) {
-    role = "user";
-  } else {
-    user = await prisma.serviceProvider.findUnique({
+    user = await prisma.user.findUnique({
       where: {
         email: body.email,
         password: body.password
@@ -137,26 +166,49 @@ authRouter.post("/signin", async (c) => {
         name: true
       }
     });
-    
+
     if (user) {
-      role = "service";
+      role = "user";
+    } else {
+      user = await prisma.serviceProvider.findUnique({
+        where: {
+          email: body.email,
+          password: body.password
+        },
+        select: {
+          id: true,
+          name: true
+        }
+      });
+
+      if (user) {
+        role = "service";
+      }
     }
-  }
-  if (!user) {
-    c.status(403);
+
+    if (!user) {
+      c.status(403);
+      return c.json({
+        error: "Invalid email or password"
+      });
+    }
+
+    const token = await sign({ id: user.id }, c.env.JWT_Secret);
+
     return c.json({
-      error: "User not found"
+      jwt: token,
+      name: user.name,
+      id: user.id,
+      role: role
+    });
+    
+  } catch (e) {
+    console.error("Error signing in:", e);
+    c.status(500);
+    return c.json({
+      error: "Internal server error"
     });
   }
-
-  const token = await sign({ id: user.id }, c.env.JWT_Secret);
-
-  return c.json({
-    jwt: token,
-    name: user.name,
-    id: user.id,
-    role: role
-  });
 });
 
 authRouter.use(jwtAuthMiddleware);

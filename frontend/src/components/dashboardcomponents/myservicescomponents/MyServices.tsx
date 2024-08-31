@@ -448,7 +448,7 @@ export const MyServices = () => {
                           name="price"
                           value={newService.price}
                           onChange={handleInputChange}
-                          className="border border-gray-300 rounded p-2 w-full dark:bg-[#374151]"
+                          className="border no-spinner border-gray-300 rounded p-2 w-full dark:bg-[#374151]"
                           required
                         />
                       </div>
@@ -598,7 +598,7 @@ export const MyServices = () => {
                 value={newService.price}
                 placeholder="Rupees"
                 onChange={handleInputChange}
-                className="border border-gray-300 rounded p-2 w-full dark:bg-[#374151]"
+                className="border no-spinner border-gray-300 rounded p-2 w-full dark:bg-[#374151]"
                 required
               />
             </div>
