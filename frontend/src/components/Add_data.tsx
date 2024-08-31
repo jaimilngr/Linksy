@@ -67,11 +67,11 @@ export const Add_Data = ({ onSubmit }: ModalProps) => {
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-10">
-      <div className="bg-white p-6 rounded-lg shadow-lg w-full md:w-1/3">
+    <div className="fixed inset-0 flex items-center justify-center  bg-black bg-opacity-50 z-10">
+      <div className="bg-white p-6 rounded-lg shadow-lg w-full md:w-1/3 dark:bg-[#374151]">
         {step === 1 ? (
           <>
-            <h2 className="text-lg text-black md:text-2xl font-bold mb-4">Confirm Your Location</h2>
+            <h2 className="text-lg  md:text-2xl font-bold mb-4">Confirm Your Location</h2>
             <div className="w-full h-64 mb-4">
               {position ? (
                 <LocationMap position={position} onPositionChange={handlePositionChange} />
@@ -91,7 +91,7 @@ export const Add_Data = ({ onSubmit }: ModalProps) => {
           <>
             {role === 'service' ? (
               <>
-                <h2 className="text-lg text-black md:text-2xl font-bold mb-4">Add Your Service Now</h2>
+                <h2 className="text-lg  md:text-2xl font-bold mb-4">Add Your Service Now</h2>
                 <Lottie animationData={serviceanimation}/>
                 <div className="flex justify-around mt-3">
                   <button
@@ -114,7 +114,7 @@ export const Add_Data = ({ onSubmit }: ModalProps) => {
               </>
             ) : (
               <>
-                <h2 className="text-lg md:text-2xl text-black font-bold mb-4">Provide Address Details</h2>
+                <h2 className="text-lg md:text-2xl  font-bold mb-4">Provide Address Details</h2>
                 <form onSubmit={handleSubmit}>
                   <input
                     type="text"
@@ -122,7 +122,7 @@ export const Add_Data = ({ onSubmit }: ModalProps) => {
                     placeholder="Enter your address"
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    className="p-2 mb-4 w-full border border-gray-300 rounded"
+                    className="p-2 mb-4 w-full border text-black border-gray-300 rounded"
                     required
                   />
                   <div className="flex justify-around">

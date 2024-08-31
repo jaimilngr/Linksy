@@ -83,6 +83,47 @@ const SignUp: React.FC<SignUpProps> = ({ handleGoBack }) => {
     return formIsValid;
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    
+    setPostInputs({ ...postInputs, [name]: value });
+
+    // Update validation errors
+    let newErrors = { ...errors };
+
+    switch (name) {
+      case 'name':
+        newErrors.name = value.trim() ? "" : "Name is required";
+        break;
+      case 'contactNo':
+        const contactNoPattern = /^[0-9]{10}$/;
+        if (!value.trim()) {
+          newErrors.contactNo = "Contact No. is required";
+        } else if (!contactNoPattern.test(value)) {
+          newErrors.contactNo = "Contact No. must be exactly 10 digits";
+        } else {
+          newErrors.contactNo = "";
+        }
+        break;
+      case 'email':
+        newErrors.email = value.trim() ? "" : "Email is required";
+        break;
+      case 'password':
+        if (!value.trim()) {
+          newErrors.password = "Password is required";
+        } else if (value.length < 6) {
+          newErrors.password = "Password must be at least 6 characters";
+        } else {
+          newErrors.password = "";
+        }
+        break;
+      default:
+        break;
+    }
+
+    setErrors(newErrors);
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!selectedRole) {
@@ -135,28 +176,6 @@ const SignUp: React.FC<SignUpProps> = ({ handleGoBack }) => {
     }
   };
 
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newPassword = e.target.value;
-    setPostInputs({ ...postInputs, password: newPassword });
-
-    if (!newPassword.trim()) {
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        password: "Password is required",
-      }));
-    } else if (newPassword.length < 6) {
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        password: "Password must be at least 6 characters",
-      }));
-    } else {
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        password: "",
-      }));
-    }
-  };
-
   const toggleShowPassword = () => {
     setShowPassword((prev) => !prev);
   };
@@ -190,12 +209,11 @@ const SignUp: React.FC<SignUpProps> = ({ handleGoBack }) => {
             <div className="w-full">
               <input
                 type="text"
+                name="name"
                 placeholder="Name"
                 className={`p-2 w-full rounded bg-white text-gray-900 ${errors.name && "border-red-500 border"}`}
                 value={postInputs.name}
-                onChange={(e) =>
-                  setPostInputs({ ...postInputs, name: e.target.value })
-                }
+                onChange={handleInputChange}
               />
               {errors.name && (
                 <p className="text-red-500 text-sm mt-1">{errors.name}</p>
@@ -204,12 +222,11 @@ const SignUp: React.FC<SignUpProps> = ({ handleGoBack }) => {
             <div className="w-full">
               <input
                 type="number"
+                name="contactNo"
                 placeholder="Contact No."
                 className={`p-2 w-full rounded no-spinner bg-white text-gray-900 ${errors.contactNo && "border-red-500 border"}`}
                 value={postInputs.contactNo}
-                onChange={(e) =>
-                  setPostInputs({ ...postInputs, contactNo: e.target.value })
-                }
+                onChange={handleInputChange}
               />
               {errors.contactNo && (
                 <p className="text-red-500 text-sm mt-1">{errors.contactNo}</p>
@@ -218,12 +235,11 @@ const SignUp: React.FC<SignUpProps> = ({ handleGoBack }) => {
             <div className="w-full">
               <input
                 type="email"
+                name="email"
                 placeholder="Email"
                 className={`p-2 w-full rounded bg-white text-gray-900 ${errors.email && "border-red-500 border"}`}
                 value={postInputs.email}
-                onChange={(e) =>
-                  setPostInputs({ ...postInputs, email: e.target.value })
-                }
+                onChange={handleInputChange}
               />
               {errors.email && (
                 <p className="text-red-500 text-sm mt-1">{errors.email}</p>
@@ -232,10 +248,11 @@ const SignUp: React.FC<SignUpProps> = ({ handleGoBack }) => {
             <div className="relative w-full">
               <input
                 type={showPassword ? "text" : "password"}
+                name="password"
                 placeholder="Password"
                 className={`p-2 w-full rounded bg-white text-gray-900 ${errors.password && "border-red-500 border"}`}
                 value={postInputs.password}
-                onChange={handlePasswordChange}
+                onChange={handleInputChange}
               />
               <button
                 type="button"
@@ -253,16 +270,14 @@ const SignUp: React.FC<SignUpProps> = ({ handleGoBack }) => {
               <p className="text-red-500 text-md mt-[-10]">{errors.password}</p>
             )}
             {generalError && (
-              <p className="text-red-500 text-md mt-1">{generalError}</p>
+              <p className="text-red-500 text-md mt-2">{generalError}</p>
             )}
             <button
               type="submit"
-              className={`w-full py-2 rounded text-white bg-blue-500 hover:bg-blue-600 ${
-                loading ? "opacity-50 cursor-not-allowed" : ""
-              }`}
+              className="w-full py-2  bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors duration-300"
               disabled={loading}
             >
-              {loading ? "Signing Up..." : "Sign Up"}
+              {loading ? "Loading..." : "Sign Up"}
             </button>
           </form>
         </motion.div>

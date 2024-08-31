@@ -158,7 +158,7 @@ export const MyServices = () => {
         serviceType: "",
         name: "",
         description: "",
-        price: 0,
+        price:0,
         timing: "",
         category: "",
         contactNo: "",
@@ -595,7 +595,7 @@ export const MyServices = () => {
               <input
                 type="number"
                 name="price"
-                value={newService.price}
+                value={newService.price || ""}
                 placeholder="Rupees"
                 onChange={handleInputChange}
                 className="border no-spinner border-gray-300 rounded p-2 w-full dark:bg-[#374151]"
