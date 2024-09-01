@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Cards } from "../components/Homecomponents/Cards";
-import { Footer } from "../components/Homecomponents/Footer";
+import { Footer } from "../components/Uicomponents/Footer";
 import Gains from "../components/Homecomponents/Gains";
 import Hero from "../components/Homecomponents/Hero";
 import { Service } from "../components/Homecomponents/Listing";

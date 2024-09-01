@@ -33,25 +33,24 @@ export const Navbar = () => {
     }
   };
 
-   const handleLocationUpdate = () => {
+  const handleLocationUpdate = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const latitude = position.coords.latitude;
           const longitude = position.coords.longitude;
 
-          localStorage.setItem('latitude', latitude.toString());
-          localStorage.setItem('longitude', longitude.toString());
+          localStorage.setItem("latitude", latitude.toString());
+          localStorage.setItem("longitude", longitude.toString());
 
           window.location.reload();
-
         },
         (error) => {
-          console.error('Error getting location:', error.message);
+          console.error("Error getting location:", error.message);
         }
       );
     } else {
-      console.error('Geolocation is not supported by this browser.');
+      console.error("Geolocation is not supported by this browser.");
     }
   };
 
@@ -100,6 +99,9 @@ export const Navbar = () => {
   }
   const { authUser, isLoggedIn } = authContext;
 
+  // Extract first initial from authUser
+  const firstInitial = authUser ? authUser[0].toUpperCase() : "";
+
   return (
     <nav
       className={`z-20 top-0 start-0 border-b border-gray-400 bg-background dark:bg-background sticky transition-transform duration-300 ${
@@ -117,43 +119,40 @@ export const Navbar = () => {
         </Link>
 
         <div className="flex md:order-2 space-x-3 md:space-x-0 rtl:space-x-reverse">
-        <div
-  className="self-center mr-3 cursor-pointer"
-  onClick={handleLocationUpdate} 
->
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    fill="none"
-    viewBox="0 0 24 24"
-    strokeWidth={1.5}
-    stroke="currentColor"
-    className="size-8"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
-    />
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"
-    />
-  </svg>
-</div>
+          <div className="self-center mr-3 cursor-pointer" onClick={handleLocationUpdate}>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="size-8"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"
+              />
+            </svg>
+          </div>
           <div className="self-center">
             <Mode />
           </div>
-          <div className="">
+          <div>
             {isLoggedIn ? (
               <div className="relative" ref={dropdownRef}>
                 <button onClick={handleDropdownToggle}>
-                  <img
+                  <div
                     id="avatarButton"
-                    className="w-14 h-14 rounded-full cursor-pointer mx-3"
-                    src="https://img.icons8.com/stickers/100/user-male-circle.png"
-                    alt="User dropdown"
-                  />
+                    className="w-10 h-10 flex items-center justify-center bg-blue-600 text-white rounded-full mx-3 cursor-pointer text-lg font-bold"
+                  >
+                    {firstInitial}
+                  </div>
                 </button>
                 {isDropdownOpen && (
                   <div className="absolute right-0 z-10 bg-white divide-y divide-gray-100 rounded-lg shadow w-44 dark:bg-gray-700 dark:divide-gray-600">
@@ -204,7 +203,7 @@ export const Navbar = () => {
           <button
             onClick={handleToggle}
             type="button"
-            className="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-gray-500 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
+            className="inline-flex self-center p-2 w-10 h-10 justify-center text-sm text-gray-500 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200 dark:text-gray-400 dark:hover:bg-gray-700 dark:focus:ring-gray-600"
             aria-expanded={isOpen}
           >
             <span className="sr-only">Open main menu</span>
@@ -236,24 +235,24 @@ export const Navbar = () => {
               <li key={index} className="relative group">
                 <ScrollLink
                   to={item.to}
-                  className={`block py-2 px-3 rounded md:bg-transparent md:p-0 ${
+                  spy={true}
+                  smooth={true}
+                  offset={-70}
+                  duration={500}
+                  className={`block cursor-pointer py-2 pl-3 pr-4 text-gray-800 rounded md:bg-transparent md:p-0 md:hover:text-secondary text-left dark:text-white ${
                     item.current
-                      ? "text-blue-700"
-                      : "dark:text-gray-300 hover:text-blue-700"
+                      ? "text-primary dark:text-primary font-semibold"
+                      : "text-gray-900 dark:text-white"
                   }`}
-                  aria-current={item.current ? "page" : undefined}
                 >
                   {item.label}
-                  {!item.current && (
-                    <span className="absolute left-0 bottom-0 w-full h-[2px] bg-blue-500 transform scale-x-0 transition-transform duration-300 ease-in-out group-hover:scale-x-100"></span>
-                  )}
                 </ScrollLink>
+                <span className="hidden md:block absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-[2px] bg-secondary transition-all duration-300 group-hover:w-full"></span>
               </li>
             ))}
           </ul>
         </div>
       </div>
-   
     </nav>
   );
 };

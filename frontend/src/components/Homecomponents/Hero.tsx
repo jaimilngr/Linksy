@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { categories } from '../../data/categories';
+import { categories } from "../../data/categories";
 
 function Hero() {
   const popularServices = [
@@ -11,10 +11,9 @@ function Hero() {
     "Laptop Repair",
   ];
 
-  
-
   const [searchQuery, setSearchQuery] = useState("");
   const [isDropdownVisible, setDropdownVisible] = useState(false);
+  const [, setNoServiceFound] = useState(false);
 
   const navigate = useNavigate();
 
@@ -25,11 +24,17 @@ function Hero() {
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
     setDropdownVisible(e.target.value.length > 0);
+    setNoServiceFound(false); 
   };
 
   const handleSearchSubmit = () => {
     if (searchQuery.trim()) {
-      navigate(`/categories/${searchQuery}`);
+      const isCategoryExists = filteredCategories.includes(searchQuery);
+      if (isCategoryExists) {
+        navigate(`/categories/${searchQuery}`);
+      } else {
+        setNoServiceFound(true);
+      }
     }
   };
 
@@ -71,7 +76,7 @@ function Hero() {
             id="search"
             value={searchQuery}
             onChange={handleSearchChange}
-            className="block w-full p-4 ps-10 text-sm text-gray-900 border border-gray-300 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+            className="block w-72 sm:w-full p-4 ps-10 text-sm text-gray-900  rounded-lg bg-gray-50  dark:bg-gray-700  dark:placeholder-gray-400 dark:text-white"
             placeholder="Search for a service"
             required
             onKeyDown={(e) => {
@@ -105,25 +110,24 @@ function Hero() {
                 </li>
               ))
             ) : (
-              <li className="p-2 text-gray-500">No services found</li>
+              <li className="p-2 text-gray-500">
+                No services found for "{searchQuery}"
+              </li>
             )}
           </ul>
         )}
       </div>
 
-      <div className="rounded-sm p-5 flex-wrap gap-2 items-center justify-center sm:flex">
+      <div className="flex rounded-sm p-5 flex-wrap gap-2 items-center justify-center mt-12">
         <div className="text-lg font-semibold">Popular:</div>
-        
-        
         {popularServices.map((service, index) => (
-        <Link to={`/categories/${service}`}>
-          <button
-          key={index}
-          className="bg-blue-500 text-white py-1 px-3 text-xs rounded-full mr-1 hover:bg-blue-600 md:py-2 md:px-4 md:text-sm"
-          >
-            {service}
-          </button>
-        </Link>
+          <Link to={`/categories/${service}`} key={index}>
+            <button
+              className="bg-blue-500 text-white py-1 px-3 text-xs rounded-full mr-1 hover:bg-blue-600 md:py-2 md:px-4 md:text-sm"
+            >
+              {service}
+            </button>
+          </Link>
         ))}
       </div>
     </div>
