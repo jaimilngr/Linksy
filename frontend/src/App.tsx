@@ -4,6 +4,7 @@ import { Home } from "./pages/Home";
 import { AuthProvider } from "./Context/Authcontext";
 import Dashboard from "./pages/Dashboard";
 import CategoryPage from "../src/components/Categorycomponents/CategoryPage";
+import VerifyEmail from "./components/Authcomponents/VerifyEmail";
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/categories/:title" element={<CategoryPage />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>

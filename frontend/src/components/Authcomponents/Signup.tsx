@@ -1,10 +1,7 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { BACKEND_URL } from "../../config";
-import Cookies from "js-cookie";
-import { useAuth } from "../../Context/Authcontext";
 import { SignupType } from "@jaimil/linksy";
 import { Role } from "./Role";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
@@ -16,8 +13,6 @@ interface SignUpProps {
 type RoleType = "user" | "service";
 
 const SignUp: React.FC<SignUpProps> = ({ handleGoBack }) => {
-  const navigate = useNavigate();
-  const { setAuthState } = useAuth();
   const [postInputs, setPostInputs] = useState<SignupType>({
     name: "",
     contactNo: "",
@@ -36,6 +31,8 @@ const SignUp: React.FC<SignUpProps> = ({ handleGoBack }) => {
   });
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [generalError, setGeneralError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showModal, setShowModal] = useState<boolean>(false);
 
   const handleRoleSelect = (role: RoleType) => {
     setSelectedRole(role);
@@ -85,7 +82,7 @@ const SignUp: React.FC<SignUpProps> = ({ handleGoBack }) => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    
+
     setPostInputs({ ...postInputs, [name]: value });
 
     // Update validation errors
@@ -136,29 +133,19 @@ const SignUp: React.FC<SignUpProps> = ({ handleGoBack }) => {
     }
 
     setLoading(true);
-    setGeneralError(null); 
+    setGeneralError(null);
     try {
       const response = await axios.post(`${BACKEND_URL}/api/v1/user/signup`, {
         ...postInputs,
         role: selectedRole,
       });
 
-      const { jwt, name } = response.data;
+      const {message} = response.data;
 
-      Cookies.set("token", jwt, { expires: 10 });
-      Cookies.set("authUser", name, { expires: 10 });
-      Cookies.set("role", selectedRole, { expires: 10 });
-
-      setAuthState({
-        authUser: name,
-        isLoggedIn: true,
-        role: selectedRole,
-        token: jwt,
-      });
-
-      localStorage.setItem("needsAdditionalData", "true");
-
-      navigate("/", { replace: true });
+      setSuccessMessage(message);
+      setShowModal(true); 
+      setPostInputs({ name: "", contactNo: "", email: "", password: "", mode: undefined });
+      setSelectedRole(null);
     } catch (error: any) {
       if (error.response) {
         const { errors, error: serverError } = error.response.data;
@@ -177,7 +164,11 @@ const SignUp: React.FC<SignUpProps> = ({ handleGoBack }) => {
   };
 
   const toggleShowPassword = () => {
-    setShowPassword((prev) => !prev);
+    setShowPassword(prev => !prev);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
   };
 
   return (
@@ -269,18 +260,42 @@ const SignUp: React.FC<SignUpProps> = ({ handleGoBack }) => {
             {errors.password && (
               <p className="text-red-500 text-md mt-[-10]">{errors.password}</p>
             )}
-            {generalError && (
-              <p className="text-red-500 text-md mt-2">{generalError}</p>
-            )}
             <button
               type="submit"
-              className="w-full py-2  bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors duration-300"
+              className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition-colors duration-300"
               disabled={loading}
             >
-              {loading ? "Loading..." : "Sign Up"}
+             
+             {loading ? (
+            <div className="sliding-bars absolute inset-2">
+              <div></div>
+              <div></div>
+              <div></div>
+            </div>
+          ) : (
+            "Sign Up"
+          )}
             </button>
+            {generalError && (
+              <p className="text-red-500 text-md mt-4">{generalError}</p>
+            )}
           </form>
         </motion.div>
+      )}
+
+      {showModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-75 z-50">
+          <div className="bg-background p-6 rounded shadow-lg max-w-sm md:max-w-md w-full">
+            <h2 className="text-2xl text-green-600 font-bold mb-4 ">Success</h2>
+            <p className="text-2xl">{successMessage}</p>
+            <button
+              onClick={closeModal}
+              className="mt-4 bg-blue-500  text-white py-2 px-4 rounded hover:bg-blue-600"
+            >
+              OK
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

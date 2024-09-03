@@ -6,13 +6,14 @@
   },
   "dependencies": {
     "@hono-storage/core": "^0.0.13",
-    "@jaimil/linksy": "^1.0.0",
+    "@jaimil/linksy": "^1.0.5",
     "@prisma/extension-accelerate": "^1.1.0",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.3.1",
     "cookie": "^0.6.0",
     "dotenv": "^16.4.5",
-    "hono": "^4.5.1"
+    "hono": "^4.5.1",
+    "uuid": "^10.0.0"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240529.0",
@@ -20,6 +21,7 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie": "^0.6.0",
     "@types/node": "^22.0.0",
+    "@types/uuid": "^10.0.0",
     "i": "^0.3.7",
     "npm": "^10.8.2",
     "prisma": "^5.18.0",

@@ -3,13 +3,24 @@ import { withAccelerate } from "@prisma/extension-accelerate";
 import { Hono } from "hono";
 import { sign, verify } from "hono/jwt";
 import { signupInput, signinInput } from '@jaimil/linksy';
+import { v4 as uuidv4 } from 'uuid';
 
 export const authRouter = new Hono<{
   Bindings: {
     DATABASE_URL: string;
     JWT_Secret: string;
+    MAILJET_API_KEY: string;
+    MAILJET_API_SECRET: string;
+    FRONTEND_URL: string;
   }
 }>();
+
+interface Environment {
+  MAILJET_API_KEY: string;
+  MAILJET_API_SECRET: string;
+}
+
+// Middleware for JWT authentication
 
 export const jwtAuthMiddleware = async (c: any, next: any) => {
   const authHeader = c.req.header('Authorization');
@@ -31,13 +42,61 @@ export const jwtAuthMiddleware = async (c: any, next: any) => {
   }
 };
 
+
+
+const generateRandomToken = async (length: number): Promise<string> => {
+  const uuid = uuidv4().replace(/-/g, '');
+  return uuid.slice(0, length);
+};
+
+
+const sendVerificationEmail = async (c:any,email: string, name: string, verificationLink: string) => {
+  const apiKey = c.env.MAILJET_API_KEY;
+  const apiSecret = c.env.MAILJET_API_SECRET;
+
+  try {
+    const response = await fetch('https://api.mailjet.com/v3.1/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${btoa(`${apiKey}:${apiSecret}`)}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        Messages: [
+          {
+            From: {
+              Email: 'linksy.info@gmail.com',
+              Name: 'Linksy'
+            },
+            To: [
+              {
+                Email: email,
+                Name: name
+              }
+            ],
+            TemplateID: 6259358, 
+            TemplateLanguage: true,
+            Variables: {
+              verificationLink: verificationLink
+            }
+          }
+        ]
+      })
+    });
+
+    const result = await response.json();
+    console.log(result);
+  } catch (error) {
+    console.error('Error sending email:', error);
+  }
+};
+
+
 // Sign-up route
 authRouter.post("/signup", async (c) => {
   const body = await c.req.json();
-
-  console.log("Received request body:", body);
-
   const result = signupInput.safeParse(body);
+
   if (!result.success) {
     c.status(400);
     return c.json({ errors: result.error.errors });
@@ -48,7 +107,6 @@ authRouter.post("/signup", async (c) => {
   }).$extends(withAccelerate());
 
   try {
-    // Check if user or service provider with the same email or contact number already exists
     const existingUser = await prisma.user.findFirst({
       where: {
         OR: [
@@ -91,47 +149,50 @@ authRouter.post("/signup", async (c) => {
       return c.json(errorResponse);
     }
 
-    let user;
+    const verificationToken = await generateRandomToken(32);
+    const tokenExpiresAt = new Date();
+    tokenExpiresAt.setHours(tokenExpiresAt.getHours() + 1);
+
     if (body.role === 'service') {
-      user = await prisma.serviceProvider.create({
+      await prisma.serviceProvider.create({
         data: {
           name: body.name,
           email: body.email,
           password: body.password,
           contactNo: body.contactNo,
           mode: body.mode ?? "offline",
-        },
-        select: {
-          id: true,
-          name: true
+          verificationToken,
+          tokenExpiresAt,
+          verified: false, // initially not verified
         }
       });
     } else {
-      user = await prisma.user.create({
+      await prisma.user.create({
         data: {
           name: body.name,
           contactNo: body.contactNo,
           email: body.email,
           password: body.password,
-        },
-        select: {
-          id: true,
-          name: true
+          verificationToken,
+          tokenExpiresAt,
+          verified: false, // initially not verified
         }
       });
     }
 
-    const token = await sign({ id: user.id }, c.env.JWT_Secret);
+    await sendVerificationEmail(
+      c,
+      body.email,
+      body.name,
+      `${c.env.FRONTEND_URL}/verify-email?token=${verificationToken}`
+    );
 
     return c.json({
-      jwt: token,
-      name: user.name,
-      id: user.id,
-      role: body.role
+      message: 'Signup successful, please check your email for a verification link.',
     });
 
   } catch (e) {
-    console.error("Error creating user:", e);
+    console.error("Error during signup:", e);
     c.status(500);
     return c.json({
       error: "Internal server error"
@@ -139,6 +200,91 @@ authRouter.post("/signup", async (c) => {
   }
 });
 
+// Email verification route
+authRouter.post('/verify-email', async (c) => {
+  const { token } = await c.req.json();
+
+  if (!token) {
+    return c.json({ error: 'Verification token is required' }, 400);
+  }
+
+  const prisma = new PrismaClient({
+    datasourceUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+
+  try {
+    const user = await prisma.user.findFirst({ where: { verificationToken: token } });
+    const serviceProvider = await prisma.serviceProvider.findFirst({ where: { verificationToken: token } });
+
+    if (!user && !serviceProvider) {
+      return c.json({ error: 'Invalid or expired token' }, 400);
+    }
+
+    let verifiedUser;
+    let role = '';
+
+    if (user) {
+      if (user.tokenExpiresAt && user.tokenExpiresAt < new Date()) {
+        return c.json({ error: 'Token has expired' }, 400);
+      }
+
+      verifiedUser = await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          verified: true,
+          verificationToken: null,
+          tokenExpiresAt: null,
+        },
+        select: {
+          id: true,
+          name: true,
+        },
+      });
+
+      role = 'user';
+    } else if (serviceProvider) {
+      if (serviceProvider.tokenExpiresAt && serviceProvider.tokenExpiresAt < new Date()) {
+        return c.json({ error: 'Token has expired' }, 400);
+      }
+
+      verifiedUser = await prisma.serviceProvider.update({
+        where: { id: serviceProvider.id },
+        data: {
+          verified: true,
+          verificationToken: null,
+          tokenExpiresAt: null,
+        },
+        select: {
+          id: true,
+          name: true,
+        },
+      });
+
+      role = 'service';
+    }
+
+    if (!verifiedUser) {
+      return c.json({ error: 'Unexpected error occurred during verification' }, 500);
+    }
+
+    const jwttoken = await sign({ id: verifiedUser.id }, c.env.JWT_Secret);
+
+    return c.json({
+      message: 'Email successfully verified. You can now sign in.',
+      jwt: jwttoken,
+      name: verifiedUser.name,
+      role: role
+    });
+  } catch (e) {
+    console.error('Error during email verification:', e);
+    return c.json({ error: 'Internal server error' }, 500);
+  }
+});
+
+
+
+
+// Sign-in route
 authRouter.post("/signin", async (c) => {
   const body = await c.req.json();
 
@@ -211,9 +357,9 @@ authRouter.post("/signin", async (c) => {
   }
 });
 
-authRouter.use(jwtAuthMiddleware);
 
-authRouter.post('/additional-data', async (c) => {
+
+authRouter.post('/additional-data', jwtAuthMiddleware, async (c) => {
   const body = await c.req.json();
 
   const prisma = new PrismaClient({
@@ -241,7 +387,7 @@ authRouter.post('/additional-data', async (c) => {
   }
 });
 
-authRouter.get('/profile', async (c) => {
+authRouter.get('/profile',jwtAuthMiddleware, async (c) => {
   const user = (c.req as any).user;
   const role = c.req.header('Role'); 
 
@@ -284,7 +430,7 @@ authRouter.get('/profile', async (c) => {
 });
 
 // Profile route (put)
-authRouter.put('/profile', async (c) => {
+authRouter.put('/profile',jwtAuthMiddleware, async (c) => {
   const user = (c.req as any).user;
   const role = c.req.header('Role'); 
   const body = await c.req.json();
@@ -330,7 +476,7 @@ authRouter.put('/profile', async (c) => {
 });
 
 // Update password route
-authRouter.put('/update-password', async (c) => {
+authRouter.put('/update-password',jwtAuthMiddleware, async (c) => {
   const body = await c.req.json();
 
   const { currentPassword, newPassword } = body;
