@@ -30,7 +30,7 @@ export const Footer = () => {
       <div className="flex flex-col md:flex-row justify-between items-center border-t border-gray-700 pt-8">
         <div className="text-7xl font-bold">Linksy™</div>
         <div className="flex flex-col md:flex-row items-center gap-6 text-sm mt-6 md:mt-0">
-          <Link to="#top" className="hover:text-gray-400">Back to top ↑</Link>
+          <a href="#top" className="hover:text-gray-400">Back to top ↑</a>
           <p>Copyright © Linksy 2024</p>
         </div>
       </div>
