@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import "../../index.css";
 import { Mode } from "./Mode";
-import { Link as ScrollLink } from "react-scroll";
 import { useAuth } from "../../Context/Authcontext";
 
 export const Navbar = () => {
@@ -11,6 +10,7 @@ export const Navbar = () => {
   const [lastScrollY, setLastScrollY] = useState(0);
   const [showNavbar, setShowNavbar] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
   const authContext = useAuth();
 
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -32,7 +32,7 @@ export const Navbar = () => {
       navigate("/");
     }
   };
-
+  
   const handleLocationUpdate = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -55,10 +55,10 @@ export const Navbar = () => {
   };
 
   const navItems = [
-    { to: "/", label: "Services", current: true },
-    { to: "your-Gains", label: "Your Gains" },
-    { to: "process", label: "Process" },
-    { to: "#", label: "FAQ" },
+    { to: "/", label: "Services", internal: true, current: true },
+    { to: "your-Gains", label: "Your Gains", internal: true },
+    { to: "process", label: "Process", internal: true },
+    { to: "faq", label: "FAQ", internal: true },
   ];
 
   useEffect(() => {
@@ -99,8 +99,18 @@ export const Navbar = () => {
   }
   const { authUser, isLoggedIn } = authContext;
 
-  // Extract first initial from authUser
   const firstInitial = authUser ? authUser[0].toUpperCase() : "";
+
+  const handleNavItemClick = (to: string) => {
+    if (location.pathname !== to) {
+      navigate("/");
+    } else {
+      const element = document.getElementById(to);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+      }
+    }
+  };
 
   return (
     <nav
@@ -226,28 +236,25 @@ export const Navbar = () => {
         </div>
         <div
           className={`absolute top-full right-0 w-full md:w-auto md:flex md:items-center md:justify-between md:relative md:bg-background md:dark:bg-background ${
-            isOpen ? "block border-zinc-200 border-t-2" : "hidden"
-          } `}
-          aria-expanded={isOpen}
+            isOpen ? "block" : "hidden"
+          }`}
         >
-          <ul className="flex flex-col text-xl p-4 md:p-0 bg-background text-right font-light rounded-lg md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0 dark:bg-background z-50">
-            {navItems.map((item, index) => (
-              <li key={index} className="relative group">
-                <ScrollLink
-                  to={item.to}
-                  spy={true}
-                  smooth={true}
-                  offset={-70}
-                  duration={500}
+                   <ul className="flex flex-col text-xl p-4 md:p-0 bg-background text-right font-light rounded-lg md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0 dark:bg-background z-50">
+
+            {navItems.map((item) => (
+              <li key={item.label} className="relative group">
+                <a
+                  href={`#${item.to}`}
+                  onClick={() => handleNavItemClick(item.to)}
                   className={`block cursor-pointer py-2 pl-3 pr-4 text-gray-800 rounded md:bg-transparent md:p-0 md:hover:text-secondary text-left dark:text-white ${
-                    item.current
-                      ? "text-primary dark:text-primary font-semibold"
-                      : "text-gray-900 dark:text-white"
+                    location.pathname === item.to
+                      ? "text-blue-600 dark:text-blue-600  font-bold"
+                      : "text-gray-900 dark:text-gray-400 hover:text-blue-600"
                   }`}
                 >
                   {item.label}
-                </ScrollLink>
-                <span className="hidden md:block absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-[2px] bg-secondary transition-all duration-300 group-hover:w-full"></span>
+                  <span className="hidden md:block absolute bottom-0 left-1/2 transform -translate-x-1/2 w-0 h-[2px] bg-secondary transition-all duration-300 group-hover:w-full"></span>
+                </a>
               </li>
             ))}
           </ul>

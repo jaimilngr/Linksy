@@ -87,7 +87,7 @@ const CategoryPage = () => {
   return (
     <div>
       <Navbar />
-      <div className="container w-fit md:h-screen mx-auto py-6 md:py-10 px-4">
+      <div className="container  w-fit  mx-auto py-6 md:py-10 px-4">
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-6 md:mb-8">
           {title} Services
         </h1>

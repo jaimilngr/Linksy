@@ -1,117 +1,39 @@
-import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 export const Footer = () => {
-  const [responseMessage, setResponseMessage] = useState('');
-  const [email, setEmail] = useState('');
-
-  const handleSubscribe = (event: React.FormEvent) => {
-    event.preventDefault();
-
-    if (!email) {
-      setResponseMessage('Please enter a valid email address.');
-    } else {
-      setResponseMessage('Thank you for subscribing to our newsletter!');
-      setEmail(''); 
-    }
-  };
-
   return (
-    <div className="flex flex-col md:flex-row justify-around bg-gradient-to-b from-blue-300 via-blue-500 to-blue-700 dark:bg-gradient-to-b dark:from-blue-500 dark:via-blue-700 dark:to-blue-900 py-8 px-4 md:px-8">
-      
-      {/* Brand Section */}
-      <div className="text-center md:text-left mb-8 md:mb-0">
-        <h1 className="text-2xl md:text-3xl font-bold">Linksy</h1>
-        <p className="mt-3 max-w-xs mx-auto md:mx-0 text-sm md:text-base">
-          Connecting you with skilled professionals to help your business grow.
-        </p>
+    <footer className="bg-slate-300 dark:bg-gray-800 py-16 px-8 md:px-16">
+      <div className="flex flex-col md:flex-row justify-between items-center md:items-start mb-12">
+        <h2 className="text-4xl md:text-5xl font-bold">Work with us</h2>
+        <a href="mailto:linksy.info@gmail.com" className="text-2xl underline mt-6 md:mt-0 hover:text-gray-400">linksy.info@gmail.com</a>
       </div>
 
-      {/* Contact Information */}
-      <div className="text-center md:text-left mb-8 md:mb-0">
-        <h1 className="text-2xl md:text-3xl font-bold">Contact Info</h1>
-        <div className="flex flex-col gap-4 mt-5 text-sm md:text-lg">
-          <div className="flex items-center justify-center md:justify-start">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth="1.5"
-              stroke="currentColor"
-              className="w-5 h-5 md:w-6 md:h-6 mr-2"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15 10.5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1 1 15 0Z"
-              />
-            </svg>
-            Ahmedabad, Gujarat
-          </div>
-          <div className="flex items-center justify-center md:justify-start">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth="1.5"
-              stroke="currentColor"
-              className="w-5 h-5 md:w-6 md:h-6 mr-2"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M10.5 1.5H8.25A2.25 2.25 0 0 0 6 3.75v16.5a2.25 2.25 0 0 0 2.25 2.25h7.5A2.25 2.25 0 0 0 18 20.25V3.75a2.25 2.25 0 0 0-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3"
-              />
-            </svg>
-            +91 82000 76383
-          </div>
-          <div className="flex items-center justify-center md:justify-start">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth="1.5"
-              stroke="currentColor"
-              className="w-5 h-5 md:w-6 md:h-6 mr-2"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"
-              />
-            </svg>
-            <p className="pl-1">jaimil.lxv@gmail.com</p>
-          </div>
+      <div className="grid grid-cols-2 gap-8 mb-12 text-2xl">
+        <div>
+          <h3 className="font-semibold mb-4">Sitemap</h3>
+          <ul className="space-y-2">
+            <li><Link to="/" className="hover:text-gray-400">Services</Link></li>
+            <li><Link to="/" className="hover:text-gray-400">FAQ</Link></li>
+          </ul>
+        </div>
+        <div>
+          <h3 className="font-semibold mb-4">Popular</h3>
+          <ul className="space-y-2">
+            <li><Link to="/categories/Tech" className="hover:text-gray-400">Tech</Link></li>
+            <li><Link to="/categories/Cleaning" className="hover:text-gray-400">Cleaning</Link></li>
+            <li><Link to="/categories/AC Service" className="hover:text-gray-400">AC Service</Link></li>
+            <li><Link to="/categories/Laptop Repair" className="hover:text-gray-400">Laptop Repair</Link></li>
+          </ul>
         </div>
       </div>
 
-      <div className="text-center md:text-left">
-        <h1 className="text-2xl md:text-3xl font-bold">Subscribe to our Newsletter</h1>
-        <p className="mt-3 text-sm md:text-base">
-          Get the latest updates and offers straight to your inbox.
-        </p>
-        <form className="flex flex-col md:flex-row mt-5" onSubmit={handleSubscribe}>
-          <input
-            type="email"
-            placeholder="Your Email"
-            className="px-4 py-2  rounded-l-lg mb-2 text-black md:mb-0 focus:outline-none w-full md:w-auto"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <button className="bg-red-600 text-white px-4 py-2 rounded-lg md:rounded-none md:rounded-r-lg hover:bg-slate-500 w-full md:w-auto">
-            Subscribe
-          </button>
-        </form>
-        {responseMessage && (
-          <p className="mt-3 text-sm md:text-base text-green-500">
-            {responseMessage}
-          </p>
-        )}
+      <div className="flex flex-col md:flex-row justify-between items-center border-t border-gray-700 pt-8">
+        <div className="text-7xl font-bold">Linksy™</div>
+        <div className="flex flex-col md:flex-row items-center gap-6 text-sm mt-6 md:mt-0">
+          <Link to="#top" className="hover:text-gray-400">Back to top ↑</Link>
+          <p>Copyright © Linksy 2024</p>
+        </div>
       </div>
-    </div>
+    </footer>
   );
 };
