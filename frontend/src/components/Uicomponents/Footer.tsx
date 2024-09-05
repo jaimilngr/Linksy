@@ -13,7 +13,7 @@ export const Footer = () => {
           <h3 className="font-semibold mb-4">Sitemap</h3>
           <ul className="space-y-2">
             <li><Link to="/" className="hover:text-gray-400">Services</Link></li>
-            <li><a href="/#faq" className="hover:text-gray-400">FAQ</a></li>
+            <li><a href="/" className="hover:text-gray-400">FAQ</a></li>
           </ul>
         </div>
         <div>
