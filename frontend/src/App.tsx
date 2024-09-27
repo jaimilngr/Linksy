@@ -5,6 +5,7 @@ import { AuthProvider } from "./Context/Authcontext";
 import Dashboard from "./pages/Dashboard";
 import CategoryPage from "../src/components/Categorycomponents/CategoryPage";
 import VerifyEmail from "./components/Authcomponents/VerifyEmail";
+import ServiceDetails from "./components/servicecomponents/ServiceDetails";
 
 function App() {
   return (
@@ -17,6 +18,8 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/categories/:title" element={<CategoryPage />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/service/:id" element={<ServiceDetails  />} />
+
           </Routes>
         </BrowserRouter>
       </AuthProvider>

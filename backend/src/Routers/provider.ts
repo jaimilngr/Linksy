@@ -195,7 +195,6 @@ serviceRouter.delete('/delete/:serviceid', async (c) => {
   }
 });
 
-// Public endpoint: no authentication required
 serviceRouter.get('/closest', async (c) => {
   const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,
@@ -235,6 +234,7 @@ serviceRouter.get('/closest', async (c) => {
         contactNo: true,
         latitude: true, 
         longitude: true, 
+        rating:true,
       },
     });
 
@@ -266,5 +266,42 @@ serviceRouter.get('/closest', async (c) => {
   } catch (error: any) {
     console.error('Error retrieving closest services:', error);
     return c.json({ error: 'Failed to retrieve closest services', details: error.message }, 500);
+  }
+});
+
+
+serviceRouter.get('/:serviceId', async (c) => {
+  const prisma = new PrismaClient({
+    datasourceUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+
+  try {
+    const serviceId  = c.req.param('serviceId'); 
+
+    const service = await prisma.service.findFirst({
+      where: {
+        id: serviceId,
+      },
+      select: {
+        name: true, 
+        description: true,
+        price: true,
+        timing: true,
+        category: true,
+        latitude: true, 
+        longitude: true, 
+        contactNo:true,
+        rating:true
+      },
+    });
+
+    if (!service) {
+      return c.json({ error: "Service not found or you don't have access" }, 404);
+    }
+
+    return c.json(service);
+  } catch (error: any) {
+    console.error('Error fetching service details:', error);
+    return c.json({ error: 'Failed to fetch service details', details: error.message }, 500);
   }
 });

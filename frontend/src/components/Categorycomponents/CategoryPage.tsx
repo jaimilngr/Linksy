@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom"; // useNavigate added here
 import axios from "axios";
 import { Navbar } from "../Uicomponents/Navbar";
 import { BACKEND_URL } from "../../config";
@@ -10,6 +10,7 @@ const CategoryPage = () => {
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate(); // Added navigate hook
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -116,6 +117,7 @@ const CategoryPage = () => {
               <div
                 key={service.id}
                 className="border border-gray-300 p-6 rounded-lg shadow-lg bg-[#ebeef4] dark:bg-[#374151] flex flex-col md:flex-row md:space-x-4 items-start md:items-center"
+                onClick={() => navigate(`/service/${service.id}`)} // Navigate to service details on click
               >
                 <div className="flex-1">
                   <h2 className="text-xl md:text-2xl font-semibold mb-2">
@@ -135,46 +137,16 @@ const CategoryPage = () => {
                   </p>
                 </div>
                 <div className="flex flex-col md:items-end">
-                  <p className="mb-2">
-                    <strong>Contact No:</strong> {service.contactNo || "N/A"}
+                  <p className="mb-4">
+                    Contact: {service.contactNo || "N/A"}
                   </p>
-                  <div className="flex space-x-2">
-                    <button
-                      className="bg-blue-500 text-white py-2 px-3 md:px-4 rounded hover:bg-blue-600 transition"
-                      onClick={() => alert(`Contact ${service.name}`)}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth={1.5}
-                        stroke="currentColor"
-                        className="w-5 h-5 inline-block mr-1"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 0 0 2.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 0 1-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 0 0-1.091-.852H4.5A2.25 2.25 0 0 0 2.25 4.5v2.25Z"
-                        />
-                      </svg>
-                      Contact
-                    </button>
-                    <button
-                      className="bg-green-500 text-white py-2 px-3 md:px-4 rounded hover:bg-green-600 transition"
-                      onClick={() =>
-                        alert(`Request created for ${service.name}`)
-                      }
-                    >
-                      Create Request
-                    </button>
-                  </div>
                 </div>
               </div>
             ))}
           </div>
         )}
       </div>
-      <Footer/>
+      <Footer />
     </div>
   );
 };
