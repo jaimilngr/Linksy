@@ -24,7 +24,7 @@ export function PopUp({issue = "We understand your interest, but please first",b
           </div>
           <div className="text-xl md:text-2xl font-bold">
             <Link
-              to="/signin"
+              to="/signup"
               className="text-blue-500 hover:text-blue-700"
               >
               Sign in Here
