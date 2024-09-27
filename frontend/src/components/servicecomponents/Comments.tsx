@@ -5,7 +5,10 @@ interface CommentProps {
   id: string;
   content: string;
   user: {
-    name: string;
+    name: string | null; // Allow null for user name
+  } | null; // Allow user to be null
+  provider: {
+    name: string | null; // Allow null for provider name
   };
   parentId: string | null;
   replies: CommentProps[];
@@ -33,15 +36,18 @@ export function Comment({ comment, onReply }: CommentComponentProps) {
     setShowReplies(false); 
   };
 
+  // Determine display name
+  const displayName = comment.user?.name || comment.provider.name || "Anonymous";
+
   return (
     <div className="mb-4 p-4 border border-gray-300 rounded-lg">
       <div className="flex items-start">
         <Avatar />
         <div className="flex-1 ml-5">
           <strong className="block text-lg font-semibold">
-            {comment.user.name}
+            {displayName}
           </strong>
-          <p className="mt-1 text-gray-700">{comment.content}</p>
+          <p className="mt-1 text-text">{comment.content}</p>
           <div className="mt-2">
             {comment.replies.length > 0 && (
               <button
@@ -68,7 +74,7 @@ export function Comment({ comment, onReply }: CommentComponentProps) {
           {showReplyForm && (
             <div className="mt-2">
               <textarea
-                className="block p-2 w-full border border-gray-300 rounded"
+                className="block p-2 w-full border text-black border-gray-300 rounded"
                 placeholder="Write a reply..."
                 value={replyContent}
                 onChange={(e) => setReplyContent(e.target.value)}

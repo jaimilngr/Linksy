@@ -13,9 +13,9 @@ export const commentRouter = new Hono<{
     }
 }>();
 
+
 commentRouter.post("/:serviceId", jwtAuthMiddleware, async (c) => {
     const user = (c.req as any).user;
-
     const prisma = new PrismaClient({
         datasourceUrl: c.env.DATABASE_URL,
     }).$extends(withAccelerate());
@@ -30,28 +30,42 @@ commentRouter.post("/:serviceId", jwtAuthMiddleware, async (c) => {
         }
 
         if (!body.content || !body.serviceId) {
-            c.status(400); 
-            return c.json({ message: "Content and Post ID are required" });
+            c.status(400);
+            return c.json({ message: "Content and Service ID are required" });
         }
 
-        const comment = await prisma.comment.create({
-            data: {
-                content: body.content,
-                userId: userId,
-                serviceId: body.serviceId,
-                parentId: body.parentId || null, 
-        }});
 
-        return c.json({ id: comment.id }, 201); 
+        let comment;
+
+        if (userId) {
+            comment = await prisma.comment.create({
+                data: {
+                    content: body.content,
+                    providerId: userId,
+                    serviceId: body.serviceId,
+                    parentId: body.parentId || null,
+                },
+            });
+        } else {
+            comment = await prisma.comment.create({
+                data: {
+                    content: body.content,
+                    userId: userId,
+                    serviceId: body.serviceId,
+                    parentId: body.parentId || null,
+                },
+            });
+        }
+
+        return c.json({ id: comment.id }, 201);
     } catch (error: any) {
         console.error("Error creating comment:", error);
-        c.status(500); // Internal Server Error
+        c.status(500);
         return c.json({
             message: "An error occurred while creating the comment",
-            error: error.message
         });
     } finally {
-        await prisma.$disconnect(); // Ensure proper disconnection
+        await prisma.$disconnect();
     }
 });
 
@@ -79,6 +93,11 @@ commentRouter.get("/bulk/:serviceId", async (c: any) => {
                         name: true,
                     }
                 },
+                provider:{
+                    select:{
+                        name:true
+                    }
+                } ,
                 parentId: true,
                 replies: {
                     select: {
@@ -87,6 +106,11 @@ commentRouter.get("/bulk/:serviceId", async (c: any) => {
                         user: {
                             select: {
                                 name: true,
+                            }
+                        },
+                        provider:{
+                            select:{
+                                name:true
                             }
                         }
                     }

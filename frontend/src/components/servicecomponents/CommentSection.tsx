@@ -9,7 +9,10 @@ interface CommentProps {
   id: string;
   content: string;
   user: {
-    name: string;
+    name: string | null;
+  };
+  provider: {
+    name: string | null;
   };
   parentId: string | null;
   replies: CommentProps[];
@@ -77,7 +80,7 @@ export function CommentsSection({ serviceId }: CommentsSectionProps) {
 
     setLoading(true);
     try {
-      const response = await axios.post(`${BACKEND_URL}/api/v1/comment`, {
+      const response = await axios.post(`${BACKEND_URL}/api/v1/comment/:serviceId`, {
         content: replyContent,
         serviceId,
         parentId: commentId
@@ -153,7 +156,7 @@ export function CommentsSection({ serviceId }: CommentsSectionProps) {
     <div className="w-full">
       {showPopup && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="relative bg-white p-6 rounded shadow w-full max-w-sm md:max-w-md">
+          <div className="relative bg-background p-6 rounded shadow w-full max-w-sm md:max-w-md">
             <button
               className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 pt-1"
               onClick={() => setShowPopup(false)}
@@ -164,9 +167,8 @@ export function CommentsSection({ serviceId }: CommentsSectionProps) {
           </div>
         </div>
       )}
-      <h2 className="text-2xl font-bold mb-4">Comments Section</h2>
       <div>
-        <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Your message</label>
+        <label className="block mb-2 text-sm font-medium text-gray-900 dark:text-white">Your review</label>
         <textarea
           id="content"
           rows={4}
@@ -180,7 +182,7 @@ export function CommentsSection({ serviceId }: CommentsSectionProps) {
           className="text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:ring-blue-300 font-medium rounded-lg text-sm px-5 py-2.5 me-2 mb-5 mt-2"
           onClick={handlePostComment}
         >
-          Post Comment
+          Post review
         </button>
       </div>
       {comments.length > 0 ? (
@@ -188,7 +190,7 @@ export function CommentsSection({ serviceId }: CommentsSectionProps) {
           <Comment key={comment.id} comment={comment} onReply={handleReply} />
         ))
       ) : (
-        <p>No comments yet. Be the first to share your thoughts!</p>
+        <p>No reviews yet. Be the first to share your thoughts!</p>
       )}
     </div>
   );
