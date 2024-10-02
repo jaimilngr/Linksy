@@ -88,7 +88,7 @@ const CategoryPage = () => {
   return (
     <div>
       <Navbar />
-      <div className="container  w-fit  mx-auto py-6 md:py-10 px-4">
+      <div className="container w-full mx-auto py-6 md:py-10 px-10">
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-6 md:mb-8">
           {title} Services
         </h1>
@@ -112,35 +112,31 @@ const CategoryPage = () => {
         )}
 
         {!loading && !error && services.length > 0 && (
-          <div className="mt-10 grid gap-6 px-10 lg:grid-cols-1">
+          <div className="mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-10">
             {services.map((service) => (
               <div
                 key={service.id}
-                className="border border-gray-300 p-6 rounded-lg shadow-lg bg-[#ebeef4] dark:bg-[#374151] flex flex-col md:flex-row md:space-x-4 items-start md:items-center"
+                className="border border-gray-300 p-6 rounded-lg shadow-lg bg-[#ebeef4] dark:bg-[#374151] flex flex-col"
                 onClick={() => navigate(`/service/${service.id}`)} // Navigate to service details on click
               >
-                <div className="flex-1">
-                  <h2 className="text-xl md:text-2xl font-semibold mb-2">
-                    {service.name}
-                  </h2>
-                  <div className="flex items-center mb-2">
-                    {renderStars(service.rating || 0)}
-                    <span className="ml-2">
-                      ({service.totalRatings || 0} ratings)
-                    </span>
-                  </div>
-                  <p className="mb-4">
-                    {service.description || "Service description not available."}
-                  </p>
-                  <p className="mb-4">
-                    Distance: {service.distance ? service.distance.toFixed(2) : "N/A"} km
-                  </p>
+                <h2 className="text-xl md:text-2xl font-semibold mb-2">
+                  {service.name}
+                </h2>
+                <div className="flex items-center mb-2">
+                  {renderStars(service.rating || 0)}
+                  <span className="ml-2">
+                    ({service.totalRatings || 0} ratings)
+                  </span>
                 </div>
-                <div className="flex flex-col md:items-end">
-                  <p className="mb-4">
-                    Contact: {service.contactNo || "N/A"}
-                  </p>
-                </div>
+                <p className="mb-4">
+                  {service.description || "Service description not available."}
+                </p>
+                <p className="mb-4">
+                  Distance: {service.distance ? service.distance.toFixed(2) : "N/A"} km
+                </p>
+                <p className="mb-4">
+                  Contact: {service.contactNo || "N/A"}
+                </p>
               </div>
             ))}
           </div>
