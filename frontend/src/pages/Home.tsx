@@ -10,7 +10,7 @@ import { Add_Data } from "../components/Add_data";
 import { BACKEND_URL } from "../config";
 import Cookies from "js-cookie";
 import axios from "axios";
-import { Faq } from "./Faq";
+import { Faq } from "../components/Homecomponents/Faq";
 
 export const Home = () => {
   const [showModal, setShowModal] = useState(false);
