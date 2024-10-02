@@ -15,14 +15,14 @@ body {
 #js-wrapper {
   overflow: hidden;
   width: 100%;
-  height: 452px;
+  height: 452px; /* Default height for larger screens */
   position: relative;
 }
 
 #js-slideContainer {
   display: flex;
   width: 400%; 
-  height: 440px; 
+  height: 440px; /* Default height for larger screens */
   position: absolute;
   box-sizing: border-box;
 }
@@ -109,8 +109,26 @@ body {
 }
 
 @media (max-width: 768px) {
+  #js-wrapper {
+    height: 400px; /* Reduced height for smaller screens */
+  }
+
+  #js-slideContainer {
+    height: 400px; /* Reduced height for smaller screens */
+  }
+
   .dot {
     width: 2rem;
     height: 2rem;
+  }
+  .dot {
+    transition: background-color 0.3s ease;
+  }
+  
+  
+  
+  .card-container.mobile {
+    width: 350px; 
+    height: 350px; 
   }
 }

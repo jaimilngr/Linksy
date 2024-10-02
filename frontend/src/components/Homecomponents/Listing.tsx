@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 
 export const Service = () => {
   return (
-    <div className="flex flex-col md:flex-row md:p-10 justify-around">
+    <div className="flex flex-col md:flex-row md:p-10 justify-around border-t-2 border-gray-300">
       <div className="p-5 md:w-5/12 h-auto flex justify-center">
         <img
           className="w-full h-auto object-cover rounded-lg"
@@ -19,9 +19,9 @@ export const Service = () => {
           <br /> <br />
           Highlight your expertise, set your availability, and start engaging with potential customers. Join today and take advantage of new opportunities to expand your reach!
           <div className="flex justify-center md:justify-start mt-8">
-            <div className="bg-blue-500 text-white rounded-md p-3 max-w-max hover:bg-background hover:cursor-pointer hover:text-blue-500 hover:border-blue-700 border-2 dark:hover:text-white dark:border-2 dark:border-background dark:hover:border-blue-700">
+            <div className="bg-blue-500 text-white rounded-md p-3 max-w-max hover:bg-background hover:cursor-pointer hover:text-blue-500 hover:border-blue-700 border-2 dark:hover:text-white dark:border-2 dark:border-background dark:hover:border-blue-700 mb-8">
               <Link to="/signup">
-                <button>Become a provider</button>
+                <button >Become a provider</button>
               </Link>
             </div>
           </div>

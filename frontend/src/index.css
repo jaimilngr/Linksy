@@ -27,6 +27,7 @@
       --primary: #2a3e60;
       --secondary: #7a9cd6;
       --accent: #2458b7;
+      --radius: 0.5rem;
     }
   
     .dark {
@@ -97,3 +98,22 @@
     -webkit-appearance: none;
     margin: 0;
   }
+
+  @keyframes float {
+    0% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+    100% {
+      transform: translateY(0);
+    }
+  }
+  
+  .circle1,
+  .circle2 {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  

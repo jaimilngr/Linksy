@@ -10,8 +10,8 @@ export const Faq = () => {
   };
 
   return (
-    <div>
-      <div className="max-w-5xl mx-auto px-4 py-8 mb-10">
+    <div className="border-t-2 border-gray-300">
+      <div className="max-w-5xl mx-auto px-4 py-8 mb-10 ">
         <h1 className="text-3xl font-bold mb-6 text-center">Frequently Asked Questions</h1>
         <div className="space-y-6 md:p-0 p-3">
           {faqItems.map((item, index) => (

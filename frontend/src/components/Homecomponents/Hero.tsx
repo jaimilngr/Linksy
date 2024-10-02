@@ -24,7 +24,7 @@ function Hero() {
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
     setDropdownVisible(e.target.value.length > 0);
-    setNoServiceFound(false); 
+    setNoServiceFound(false);
   };
 
   const handleSearchSubmit = () => {
@@ -39,7 +39,13 @@ function Hero() {
   };
 
   return (
-    <div className="flex items-center justify-center flex-col w-full py-10 md:py-36 border-zinc-300 border-b-2">
+    <div className="relative flex items-center justify-center flex-col w-full py-10 md:py-36 border-zinc-300 border-b-2 overflow-hidden">
+      <div className="absolute inset-0 z-[-10] hidden lg:block">
+        <div className="absolute circle1 w-24 h-24  rounded-full bg-gradient-to-br from-cyan-600 to-white top-12 left-48 opacity-100 animate-pulse"></div>
+        <div className="absolute circle2 w-24 h-24 rounded-full bg-gradient-to-br from-red-600 to-white bottom-1/4 right-5 opacity-100 animate-pulse z-2"></div>
+        <div className="absolute gray-circle1 w-[550px] h-[550px] bg-gray-300 opacity-50 top-[-15%] left-[-22%] rounded-full"></div>
+        <div className="absolute gray-circle2 w-[550px] h-[550px] bg-gray-500 opacity-50 bottom-[-50%] right-[-8%] rounded-full z-[-1]"></div>
+      </div>
       <div className="text-2xl font-bold sm:text-5xl lg:text-6xl text-text text-center whitespace-pre-line">
         Discover, Connect, and Engage {"\n"}
         with Top-Quality <span className="text-accent">Services</span> {"\n"}
@@ -76,7 +82,7 @@ function Hero() {
             id="search"
             value={searchQuery}
             onChange={handleSearchChange}
-            className="block w-72 sm:w-full p-4 ps-10 text-sm text-gray-900  rounded-lg bg-gray-50  dark:bg-gray-700  dark:placeholder-gray-400 dark:text-white"
+            className="block w-72 sm:w-full p-4 ps-10 text-sm text-gray-900 rounded-lg bg-gray-50 dark:bg-gray-700 dark:placeholder-gray-400 dark:text-white"
             placeholder="Search for a service"
             required
             onKeyDown={(e) => {
@@ -123,7 +129,7 @@ function Hero() {
         {popularServices.map((service, index) => (
           <Link to={`/categories/${service}`} key={index}>
             <button
-              className="bg-blue-500 text-white py-1 px-3 text-xs rounded-full mr-1 hover:bg-blue-600 md:py-2 md:px-4 md:text-sm"
+              className="bg-blue-500 cursor-pointer text-white py-1 px-3 text-xs rounded-full mr-1 hover:bg-blue-600 md:py-2 md:px-4 md:text-sm"
             >
               {service}
             </button>
