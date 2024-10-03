@@ -19,7 +19,7 @@ interface CommentProps {
 }
 
 interface CommentsSectionProps {
-  serviceId: string;
+  serviceId: string | undefined;
 }
 
 export function CommentsSection({ serviceId }: CommentsSectionProps) {

@@ -165,7 +165,7 @@ export const Navbar = () => {
                   </div>
                 </button>
                 {isDropdownOpen && (
-                  <div className="absolute right-0 z-10 bg-white divide-y divide-gray-100  shadow w-44 dark:bg-gray-700 dark:divide-gray-600">
+                  <div className="absolute  rounded-lg mt-2 right-0 z-10 bg-white divide-y divide-gray-100  shadow w-44 dark:bg-gray-700 dark:divide-gray-600">
                     <div className="px-4 py-3 text-sm text-gray-900 dark:text-white">
                       <div>{authUser}</div>
                     </div>

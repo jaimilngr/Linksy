@@ -6,6 +6,7 @@ import { Footer } from "../Uicomponents/Footer";
 import { BACKEND_URL } from "../../config";
 import { useAuth } from "../../Context/Authcontext";
 import { CommentsSection } from "./CommentSection";
+import Cookies from "js-cookie";
 
 const ServiceDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -13,6 +14,16 @@ const ServiceDetails = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("overview");
+  const [selecteddate, setDate] = useState<string>("");
+  const [time, setTime] = useState<string>("");
+  const [requestStatus, setRequestStatus] = useState<{
+    error: string | null;
+    success: string | null;
+  }>({
+    error: null,
+    success: null,
+  });
+
   const navigate = useNavigate();
   const authContext = useAuth();
   const { isLoggedIn } = authContext;
@@ -33,8 +44,57 @@ const ServiceDetails = () => {
     fetchServiceDetails();
   }, [id]);
 
+  const CreateServiceRequest = async () => {
+    if (!isLoggedIn) {
+      setRequestStatus({
+        ...requestStatus,
+        error: "You must be logged in to send a request.",
+      });
+      return;
+    }
+    if (!selecteddate && !time) {
+      setRequestStatus({
+        ...requestStatus,
+        error: "Please provide either a date or time.",
+      });
+      return;
+    }
+    const date  = selecteddate ? new Date(selecteddate).toISOString() : null;
+    const role = Cookies.get("role")
+    try {
+      setLoading(true);
+      await axios.post(
+        `${BACKEND_URL}/api/v1/service/createreq/${id}`,
+        { date, time,role },
+        {
+          headers: {
+            Authorization: `Bearer ${Cookies.get("token") || ""}`,
+          },
+        }
+      );
+      setRequestStatus({
+        error: null,
+        success: "Service request sent successfully!",
+      });
+      setDate("");
+      setTime("");
+    } catch (error: any) {
+      console.error("Error fetching service details:", error);
+      setRequestStatus({
+        error: error.message || "Failed to send service request",
+        success: null,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex justify-center items-center h-full">
+        <div className="loader border-t-4 border-blue-500 border-solid rounded-full w-12 h-12 animate-spin"></div>
+      </div>
+    );
   }
 
   if (error) {
@@ -61,30 +121,40 @@ const ServiceDetails = () => {
       case "policies":
         return (
           <div className="rounded-lg">
-            <h2 className="text-3xl font-bold mb-4 border-b-2 border-blue-600 pb-2">Policies</h2>
+            <h2 className="text-3xl font-bold mb-4 border-b-2 border-blue-600 pb-2">
+              Policies
+            </h2>
             <p className="text-lg mb-4">{service.policies}</p>
           </div>
         );
       case "reviews":
         return (
           <div className="rounded-lg">
-            <h2 className="text-3xl font-bold mb-4 border-b-2 border-blue-600 pb-2">Reviews</h2>
-           
-            <p className="text-lg mb-4"> <CommentsSection //@ts-ignore 
-            serviceId={id}/></p>
+            <h2 className="text-3xl font-bold mb-4 border-b-2 border-blue-600 pb-2">
+              Reviews
+            </h2>
+
+            <p className="text-lg mb-4">
+              {" "}
+              <CommentsSection serviceId={id} />
+            </p>
           </div>
         );
       case "map":
         return (
           <div className="rounded-lg">
-            <h2 className="text-3xl font-bold mb-4 border-b-2 border-blue-600 pb-2">Map</h2>
+            <h2 className="text-3xl font-bold mb-4 border-b-2 border-blue-600 pb-2">
+              Map
+            </h2>
             <p className="text-lg mb-4">{service.mapLocation}</p>
           </div>
         );
       case "availability":
         return (
           <div className="rounded-lg">
-            <h2 className="text-3xl font-bold mb-4 border-b-2 border-blue-600 pb-2">Availability</h2>
+            <h2 className="text-3xl font-bold mb-4 border-b-2 border-blue-600 pb-2">
+              Availability
+            </h2>
             <p className="text-lg mb-4">{service.availability}</p>
           </div>
         );
@@ -100,7 +170,9 @@ const ServiceDetails = () => {
       url: `${window.location.origin}/service/${id}`,
     };
 
-    navigator.share(shareData).catch((error) => console.error("Error sharing:", error));
+    navigator
+      .share(shareData)
+      .catch((error) => console.error("Error sharing:", error));
   };
 
   return (
@@ -111,9 +183,20 @@ const ServiceDetails = () => {
           className="mb-4 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 dark:bg-blue-700 dark:hover:bg-blue-800"
           onClick={() => navigate(-1)}
         >
-<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-6">
-  <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
-</svg>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={1.5}
+            stroke="currentColor"
+            className="size-6"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
+            />
+          </svg>
         </button>
         {service ? (
           <div className="service-details  p-2  grid grid-cols-1 md:grid-cols-[4fr_1fr] gap-4">
@@ -142,7 +225,9 @@ const ServiceDetails = () => {
                 </button>
               </div>
               <div className="flex items-center space-x-4 mb-4">
-                <p className="text-xl font-semibold text-green-600 dark:text-green-400">⭐{service.rating.toFixed(1)}</p>
+                <p className="text-xl font-semibold text-green-600 dark:text-green-400">
+                  ⭐{service.rating.toFixed(1)}
+                </p>
                 <p className="text-xl font-semibold text-gray-600 dark:text-gray-300 flex items-center">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -167,126 +252,146 @@ const ServiceDetails = () => {
                 </p>
               </div>
 
-       {/* Responsive Tab Selector */}
-<div>
-  {/* Dropdown for small screens */}
-  <div className="sm:hidden mb-4">
-    <select
-      value={activeTab}
-      onChange={(e) => setActiveTab(e.target.value)}
-      className="block w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300"
-    >
-      <option value="overview">Overview</option>
-      <option value="policies">Policies</option>
-      <option value="reviews">Reviews</option>
-      <option value="map">Map</option>
-      <option value="availability">Availability</option>
-    </select>
-  </div>
+              {/* Responsive Tab Selector */}
+              <div>
+                <div className="sm:hidden mb-4">
+                  <select
+                    value={activeTab}
+                    onChange={(e) => setActiveTab(e.target.value)}
+                    className="block w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300"
+                  >
+                    <option value="overview">Overview</option>
+                    <option value="policies">Policies</option>
+                    <option value="reviews">Reviews</option>
+                    <option value="map">Map</option>
+                    <option value="availability">Availability</option>
+                  </select>
+                </div>
 
-  {/* Tab buttons for larger screens */}
-  <div className="hidden sm:flex space-x-4 mb-4">
-    <button
-      className={`relative py-2 px-4 ${
-        activeTab === "overview"
-          ? "text-blue-600 dark:text-blue-400"
-          : "text-gray-700 dark:text-gray-300"
-      }`}
-      onClick={() => setActiveTab("overview")}
-    >
-      Overview
-      {activeTab === "overview" && (
-        <div className="absolute bottom-0 left-0 h-1 w-full bg-blue-600 dark:bg-blue-400" />
-      )}
-    </button>
-    <button
-      className={`relative py-2 px-4 ${
-        activeTab === "policies"
-          ? "text-blue-600 dark:text-blue-400"
-          : "text-gray-700 dark:text-gray-300"
-      }`}
-      onClick={() => setActiveTab("policies")}
-    >
-      Policies
-      {activeTab === "policies" && (
-        <div className="absolute bottom-0 left-0 h-1 w-full bg-blue-600 dark:bg-blue-400" />
-      )}
-    </button>
-    <button
-      className={`relative py-2 px-4 ${
-        activeTab === "reviews"
-          ? "text-blue-600 dark:text-blue-400"
-          : "text-gray-700 dark:text-gray-300"
-      }`}
-      onClick={() => setActiveTab("reviews")}
-    >
-      Reviews
-      {activeTab === "reviews" && (
-        <div className="absolute bottom-0 left-0 h-1 w-full bg-blue-600 dark:bg-blue-400" />
-      )}
-    </button>
-    <button
-      className={`relative py-2 px-4 ${
-        activeTab === "map"
-          ? "text-blue-600 dark:text-blue-400"
-          : "text-gray-700 dark:text-gray-300"
-      }`}
-      onClick={() => setActiveTab("map")}
-    >
-      Map
-      {activeTab === "map" && (
-        <div className="absolute bottom-0 left-0 h-1 w-full bg-blue-600 dark:bg-blue-400" />
-      )}
-    </button>
-    <button
-      className={`relative py-2 px-4 ${
-        activeTab === "availability"
-          ? "text-blue-600 dark:text-blue-400"
-          : "text-gray-700 dark:text-gray-300"
-      }`}
-      onClick={() => setActiveTab("availability")}
-    >
-      Availability
-      {activeTab === "availability" && (
-        <div className="absolute bottom-0 left-0 h-1 w-full bg-blue-600 dark:bg-blue-400" />
-      )}
-    </button>
-  </div>
-</div>
-              {/* Tab Content */}
+                {/* Tab buttons for larger screens */}
+                <div className="hidden sm:flex space-x-4 mb-4">
+                  <button
+                    className={`relative py-2 px-4 ${
+                      activeTab === "overview"
+                        ? "text-blue-600 dark:text-blue-400"
+                        : "text-gray-700 dark:text-gray-300"
+                    }`}
+                    onClick={() => setActiveTab("overview")}
+                  >
+                    Overview
+                    {activeTab === "overview" && (
+                      <div className="absolute bottom-0 left-0 h-1 w-full bg-blue-600 dark:bg-blue-400" />
+                    )}
+                  </button>
+                  <button
+                    className={`relative py-2 px-4 ${
+                      activeTab === "policies"
+                        ? "text-blue-600 dark:text-blue-400"
+                        : "text-gray-700 dark:text-gray-300"
+                    }`}
+                    onClick={() => setActiveTab("policies")}
+                  >
+                    Policies
+                    {activeTab === "policies" && (
+                      <div className="absolute bottom-0 left-0 h-1 w-full bg-blue-600 dark:bg-blue-400" />
+                    )}
+                  </button>
+                  <button
+                    className={`relative py-2 px-4 ${
+                      activeTab === "reviews"
+                        ? "text-blue-600 dark:text-blue-400"
+                        : "text-gray-700 dark:text-gray-300"
+                    }`}
+                    onClick={() => setActiveTab("reviews")}
+                  >
+                    Reviews
+                    {activeTab === "reviews" && (
+                      <div className="absolute bottom-0 left-0 h-1 w-full bg-blue-600 dark:bg-blue-400" />
+                    )}
+                  </button>
+                  <button
+                    className={`relative py-2 px-4 ${
+                      activeTab === "map"
+                        ? "text-blue-600 dark:text-blue-400"
+                        : "text-gray-700 dark:text-gray-300"
+                    }`}
+                    onClick={() => setActiveTab("map")}
+                  >
+                    Map
+                    {activeTab === "map" && (
+                      <div className="absolute bottom-0 left-0 h-1 w-full bg-blue-600 dark:bg-blue-400" />
+                    )}
+                  </button>
+                  <button
+                    className={`relative py-2 px-4 ${
+                      activeTab === "availability"
+                        ? "text-blue-600 dark:text-blue-400"
+                        : "text-gray-700 dark:text-gray-300"
+                    }`}
+                    onClick={() => setActiveTab("availability")}
+                  >
+                    Availability
+                    {activeTab === "availability" && (
+                      <div className="absolute bottom-0 left-0 h-1 w-full bg-blue-600 dark:bg-blue-400" />
+                    )}
+                  </button>
+                </div>
+              </div>
               {renderTabContent()}
             </div>
 
             {/* Pricing Section */}
             <div className="bg-background dark:bg-gray-700 justify-center items-center p-4 rounded-lg border-secondary border-[3px] h-fit">
-              <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">Pricing</h2>
-              <p className="text-xl font-semibold mb-2 text-gray-700 dark:text-gray-300">₹ {service.price}</p>
+              <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-gray-200">
+                Pricing
+              </h2>
+              <p className="text-xl font-semibold mb-2 text-gray-700 dark:text-gray-300">
+                ₹ {service.price}
+              </p>
               <hr />
 
               <div className="mb-4 mt-3">
-                <p className="text-md mb-3 text-gray-800 dark:text-gray-200">
-                  <strong>Date:</strong> <input type="date" className="border p-1 text-gray-800" />
+                <p className="text-md mb-3 text-gray-800 ">
+                  <strong className="text-text">Date:</strong>{" "}
+                  <input
+                    type="date"
+                    value={selecteddate}
+                    onChange={(e) => setDate(e.target.value)}
+                    className="border p-2 rounded-lg w-full mb-4"
+                  />
                 </p>
-                <p className="text-md mb-3 text-gray-800 dark:text-gray-200">
-                  <strong>Time:</strong> <input type="time" className="border p-1 text-gray-800" />
+                <p className="text-md mb-3 text-gray-800 ">
+                  <strong className="text-text">Time:</strong>{" "}
+                  <input
+                    type="time"
+                    value={time}
+                    onChange={(e) => setTime(e.target.value)}
+                    className="border p-2 rounded-lg w-full mb-4"
+                  />{" "}
                 </p>
               </div>
               <button
-  className={`p-2 text-white py-2 rounded transition duration-200 ${
-    isLoggedIn
-      ? "bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600"
-      : "bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600"
-  }`}
-  onClick={() => {
-    if (isLoggedIn) {
-      alert("Request sent!");
-    } else {
-      navigate("/signup");  
-    }
-  }}
->
-  {isLoggedIn ? "Request Now" : "Sign In Now"}
-</button>
+                className={`p-2 text-white py-2 rounded justify-center items-center flex transition duration-200 ${
+                  isLoggedIn
+                    ? "bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600"
+                    : "bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600"
+                }`}
+                onClick={() => {
+                  if (isLoggedIn) {
+                    CreateServiceRequest();
+                  } else {
+                    navigate("/signup");
+                  }
+                }}
+              >
+                {isLoggedIn ? "Request Now" : "Sign In Now"}
+              </button>
+              {requestStatus.error && (
+                <p className="text-red-500">{requestStatus.error}</p>
+              )}
+              {requestStatus.success && (
+                <p className="text-green-500">{requestStatus.success}</p>
+              )}
             </div>
           </div>
         ) : (

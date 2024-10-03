@@ -27,10 +27,18 @@ interface ClosestServicesBody {
   category: string;
 }
 
+interface CreateServiceReqBody {
+  date: string;
+  time: string;
+  role: string;
+}
+
 serviceRouter.use('/create', jwtAuthMiddleware);
 serviceRouter.use('/myservices', jwtAuthMiddleware);
 serviceRouter.use('/update/:serviceid', jwtAuthMiddleware);
 serviceRouter.use('/delete/:serviceid', jwtAuthMiddleware);
+serviceRouter.use('/createreq/:serviceid', jwtAuthMiddleware);
+serviceRouter.use('/ticket', jwtAuthMiddleware);
 
 serviceRouter.post('/create', async (c) => {
   const user = (c.req as any).user;
@@ -269,6 +277,156 @@ serviceRouter.get('/closest', async (c) => {
   }
 });
 
+
+// fetch service request tickets 
+
+serviceRouter.get('/ticket', async (c) => {
+  const user = (c.req as any).user;
+  const prisma = new PrismaClient({
+    datasourceUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+
+  const userId = user.id as string;
+
+  try {
+    const servicereq = await prisma.ticket.findMany({
+      where: {
+        OR: [
+          { userId: userId },    
+          { providerId: userId }  
+        ]
+      },
+      select: {
+        id: true,
+        serviceId: true,         
+        time: true,              
+        date: true,              
+        status: true,            
+        service: {
+          select: {
+            name: true           
+          }
+        }
+      },
+    });
+
+    if (servicereq.length === 0) {
+      return c.json({ error: 'No tickets found or access denied' }, 404);
+    }
+    return c.json(servicereq);
+  } catch (error: any) {
+    console.error('Error fetching service requests: ', error);
+    return c.json({ error: 'Failed to fetch service requests', details: error.message }, 500);
+  }
+});
+
+// schedule route 
+
+serviceRouter.get('/schedule',jwtAuthMiddleware, async (c) => {
+  const user = (c.req as any).user;
+  const prisma = new PrismaClient({
+    datasourceUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+
+  const userId = user.id as string;
+
+  try {
+    const schedule = await prisma.ticket.findMany({
+      where: {
+        serviceownedId: userId,
+        OR: [
+          { role: "service" },
+          { role: "user" }
+        ],
+      },
+      select: {
+        id: true,
+        serviceId: true,
+        time: true,
+        date: true,
+        status: true,
+        service: {
+          select: {
+            name: true,
+            price: true,
+            category: true,
+          }
+        },
+        user: {
+          select: {
+            name: true,
+            address: true,
+            contactNo: true,
+          }
+        },
+        provider: {
+          select: {
+            name: true,
+            contactNo: true,
+          }
+        }
+      },
+    });
+
+    return c.json(schedule);
+  } catch (error: any) {
+    console.error('Error fetching service requests: ', error);
+    return c.json({ error: 'Failed to fetch service requests', details: error.message }, 500);
+  }
+});
+
+
+// Create service request 
+
+serviceRouter.post('/createreq/:serviceid', async (c) => {
+  const user = (c.req as any).user;
+  const prisma = new PrismaClient({
+    datasourceUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+
+  const userId = user.id as string;
+
+  try {
+    const serviceId = c.req.param('serviceid');
+
+    const service = await prisma.service.findUnique({
+      where: { id: serviceId },
+      select: { providerId: true },
+    });
+
+    if (!service) {
+      return c.json({ error: 'Service provider not found' }, 404);
+    }
+
+    const serviceownedId = service.providerId; 
+
+    const body: CreateServiceReqBody = await c.req.json();
+
+    if (!body.date || !body.time || !body.role) {
+      return c.json({ error: 'Missing required fields' }, 400);
+    }
+
+    const providerId = body.role === 'service' ? userId : null; 
+
+    const servicereq = await prisma.ticket.create({
+      data: {
+        userId: body.role === 'service' ? null : userId, 
+        serviceId: serviceId,
+        providerId: providerId, 
+        serviceownedId: serviceownedId, 
+        status: "open",
+        time: body.time,
+        date: body.date,
+        role: body.role,
+      },
+    });
+
+    return c.json(servicereq);
+  } catch (error: any) {
+    console.error('Error creating service request:', error);
+    return c.json({ error: 'Failed to create service request', details: error.message }, 500);
+  }
+});
 
 serviceRouter.get('/:serviceId', async (c) => {
   const prisma = new PrismaClient({

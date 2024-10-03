@@ -17,14 +17,14 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240529.0",
-    "@prisma/client": "^5.18.0",
+    "@prisma/client": "^5.20.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie": "^0.6.0",
     "@types/node": "^22.0.0",
     "@types/uuid": "^10.0.0",
     "i": "^0.3.7",
     "npm": "^10.8.2",
-    "prisma": "^5.18.0",
+    "prisma": "^5.20.0",
     "wrangler": "^3.57.2"
   }
 }
