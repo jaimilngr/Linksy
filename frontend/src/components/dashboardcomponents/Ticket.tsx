@@ -26,6 +26,15 @@ export const Ticket = () => {
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [rating, setRating] = useState<number | null>(null);
+  const [comment, setComment] = useState<string>('');
+  const [cancelReason, setCancelReason] = useState<string>('');
+  const [customCancelReason, setCustomCancelReason] = useState<string>('');
+  const [showDoneModal, setShowDoneModal] = useState<boolean>(false);
+  const [showCancelModal, setShowCancelModal] = useState<boolean>(false);
+  const [currentTicketId, setCurrentTicketId] = useState<string | null>(null);
+  const [cancelError, setCancelError] = useState<string | null>(null); 
+  const [doneError, setDoneError] = useState<string | null>(null); 
 
   useEffect(() => {
     const fetchTickets = async () => {
@@ -60,24 +69,93 @@ export const Ticket = () => {
   }, []);
 
   const handleCancelRequest = async (ticketId: string) => {
+    setCurrentTicketId(ticketId);
+    setShowCancelModal(true);
+  };
+
+  const handleCancelSubmit = async () => {
+    setCancelError(null); 
+
+    if (!cancelReason && !customCancelReason) {
+      setCancelError('Please provide a reason for canceling.');
+      return;
+    }
+    if (cancelReason === 'Other' && !customCancelReason) {
+      setCancelError("Please specify the reason for 'Other'."); 
+      return; 
+    }
+  
     try {
-      await axios.put(`${BACKEND_URL}/api/v1/service/tickets/${ticketId}/cancel`, {}, {
+      await axios.put(`${BACKEND_URL}/api/v1/service/ticket/cancel/${currentTicketId}`, { reason: cancelReason || customCancelReason }, {
         headers: {
           Authorization: `Bearer ${Cookies.get('token') || ''}`,
         },
       });
       setTickets((prevTickets) =>
         prevTickets.map((ticket) =>
-          ticket.id === ticketId ? { ...ticket, status: 'closed' } : ticket
+          ticket.id === currentTicketId ? { ...ticket, status: 'cancel' } : ticket
         )
       );
     } catch (error: any) {
       if (error.response) {
-        setError(`Error: ${error.response.status} - ${error.response.data.message}`);
+        setCancelError(`Error: ${error.response.status} - ${error.response.data.message}`);
       } else {
-        setError('Failed to cancel the ticket. Please try again later.');
+        setCancelError('Failed to cancel the ticket. Please try again later.');
       }
+    } finally {
+      setShowCancelModal(false);
+      setCurrentTicketId(null);
+      setCancelReason('');
+      setCustomCancelReason('');
     }
+  };
+
+  const handleMarkAsDone = async (ticketId: string) => {
+    setCurrentTicketId(ticketId);
+    setShowDoneModal(true);
+  };
+
+  const handleDoneSubmit = async () => {
+    setDoneError(null); // Reset done error message
+
+    if (rating === null || rating < 1 || rating > 5) {
+      setDoneError('Please provide a valid rating (1-5).');
+      return;
+    }
+  
+    if (comment.trim() === '') {
+      setDoneError('Please provide a comment about your experience.');
+      return;
+    }
+    
+    try {
+      await axios.put(`${BACKEND_URL}/api/v1/service/ticket/done/${currentTicketId}`, { rating, comment }, {
+        headers: {
+          Authorization: `Bearer ${Cookies.get('token') || ''}`,
+        },
+      });
+      setTickets((prevTickets) =>
+        prevTickets.map((ticket) =>
+          ticket.id === currentTicketId ? { ...ticket, status: 'done' } : ticket
+        )
+      );
+    } catch (error: any) {
+      if (error.response) {
+        setDoneError(`Error: ${error.response.status} - ${error.response.data.message}`);
+      } else {
+        setDoneError('Failed to mark the ticket as done. Please try again later.');
+      }
+    } finally {
+      setShowDoneModal(false);
+      setCurrentTicketId(null);
+      setRating(null);
+      setComment('');
+    }
+  };
+
+  const handleInputInteraction = () => {
+    setCancelError(null); 
+    setDoneError(null);   
   };
 
   if (loading) {
@@ -88,18 +166,17 @@ export const Ticket = () => {
     );
   }
 
-  // Filter open and closed tickets
   const openTickets = tickets.filter((ticket) => ticket.status === 'open');
-  const closedTickets = tickets.filter((ticket) => ticket.status === 'closed');
+  const previousTickets = tickets.filter((ticket) => ticket.status === 'done' || ticket.status === 'cancel');
 
   return (
     <div className="px-4 py-8 max-w-3xl">
       <h3 className="text-3xl font-bold text-text mb-8 text-center">Your Service Tickets</h3>
-      {error && <p className="text-red-600">{error}</p>} 
+      {error && <p className="text-red-600">{error}</p>}
 
       {/* Open Tickets Section */}
       <div>
-        <h4 className="text-2xl font-semibold mb-4 text-text">Open Tickets</h4>
+        <h4 className="text-2xl font-semibold mb-4 text-text">Active Tickets</h4>
         {openTickets.length === 0 ? (
           <p className="text-gray-500">No open service requests at the moment.</p>
         ) : (
@@ -107,7 +184,7 @@ export const Ticket = () => {
             {openTickets.map((ticket) => (
               <div
                 key={ticket.id}
-                className="p-6 mb-4 rounded-xl bg-green-100/60 backdrop-blur-lg shadow-lg border border-green-300 hover:shadow-xl transition-shadow duration-300"
+                className="p-6 mb-4 rounded-xl bg-[#5db87c99] backdrop-blur-lg shadow-lg border border-green-300 hover:shadow-xl transition-shadow duration-300"
               >
                 <p className="text-lg font-semibold text-text">
                   <strong>Status:</strong> {ticket.status}
@@ -121,31 +198,39 @@ export const Ticket = () => {
                 <p className="text-text">
                   <strong>Time:</strong> {ticket.time}
                 </p>
-                <button
-                  onClick={() => handleCancelRequest(ticket.id)}
-                  className="bg-red-500 text-white px-4 py-2 rounded-md mt-4 w-full hover:bg-red-600 transition-colors duration-300"
-                >
-                  Cancel Request
-                </button>
+                <div className="flex gap-4 mt-4">
+                  <button
+                    onClick={() => handleCancelRequest(ticket.id)}
+                    className="bg-red-500 text-white px-4 py-2 rounded-md w-full hover:bg-red-600 transition-colors duration-300"
+                  >
+                    Cancel Request
+                  </button>
+                  <button
+                    onClick={() => handleMarkAsDone(ticket.id)}
+                    className="bg-blue-500 text-white px-4 py-2 rounded-md w-full hover:bg-blue-600 transition-colors duration-300"
+                  >
+                    Done
+                  </button>
+                </div>
               </div>
             ))}
           </div>
         )}
       </div>
 
-      {/* Closed Tickets Section */}
+      {/* Previous Tickets Section */}
       <div className="mt-12">
-        <h4 className="text-2xl font-semibold mb-4 text-text">Closed Tickets</h4>
-        {closedTickets.length === 0 ? (
-          <p className="text-gray-500">No closed tickets yet.</p>
+        <h4 className="text-2xl font-semibold mb-4 text-text">Previous Tickets</h4>
+        {previousTickets.length === 0 ? (
+          <p className="text-gray-500">No previous tickets yet.</p>
         ) : (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            {closedTickets.map((ticket) => (
+            {previousTickets.map((ticket) => (
               <div
                 key={ticket.id}
                 className="p-6 mb-4 rounded-xl bg-white/50 backdrop-blur-md shadow-lg border border-gray-200 hover:shadow-xl transition-shadow duration-300"
               >
-                <p className="text-lg font-semibold text-gray-800">
+                <p className="text-lg font-semibold text-text">
                   <strong>Status:</strong> {ticket.status}
                 </p>
                 <p className="text-lg text-text">
@@ -162,6 +247,110 @@ export const Ticket = () => {
           </div>
         )}
       </div>
+
+{/* Cancel Modal */} 
+{showCancelModal && (
+  <div className="fixed inset-0 flex items-center justify-center z-50">
+    <div className="bg-background border-black dark:border-gray-100 border p-6 rounded-lg shadow-lg w-full max-w-md">
+      <h2 className="text-xl font-semibold mb-4">Cancel Ticket</h2>
+      <p className="mb-2">Please provide a reason for canceling:</p>
+
+      {/* Select for Cancellation Reasons */}
+      <select
+        value={cancelReason}
+        onChange={(e) => {
+          setCancelReason(e.target.value);
+          handleInputInteraction();
+        }}
+        className="border border-gray-300 bg-background rounded-md p-2 w-full mb-4"
+      >
+        <option value="">Select a reason...</option>
+        <option value="Service not needed anymore">Service not needed anymore</option>
+        <option value="Scheduling conflicts">Scheduling conflicts</option>
+        <option value="Poor experience">Poor experience</option>
+        <option value="Other">Other</option>
+      </select>
+
+      {/* Conditional Input for Custom Reason */}
+      {cancelReason === 'Other' && (
+        <input
+          type="text"
+          placeholder="Specify other reason"
+          value={customCancelReason}
+          onChange={(e) => {
+            setCustomCancelReason(e.target.value);
+            handleInputInteraction(); 
+          }}
+          className="border bg-background border-gray-300 rounded-md p-2 w-full mb-4"
+        />
+      )}
+
+      {/* Error Message */}
+      {cancelError && <p className="text-red-600 mb-4">{cancelError}</p>}
+
+      {/* Action Buttons */}
+      <div className="flex justify-end">
+        <button
+          onClick={handleCancelSubmit}
+          className="bg-red-500 text-white px-4 py-2 rounded-md mr-2 hover:bg-red-600 transition-colors duration-300"
+        >
+          Submit Cancellation
+        </button>
+        <button
+          onClick={() => setShowCancelModal(false)}
+          className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors duration-300"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
+      {/* Done Modal */}
+      {showDoneModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="bg-background border-black dark:border-gray-100 border p-6 rounded-lg shadow-lg w-full max-w-md">
+            <h2 className="text-xl font-semibold mb-4">Rate Your Experience</h2>
+            <input
+              type="number"
+              placeholder="Rating (1-5)"
+              value={rating === null ? '' : rating}
+              onChange={(e) => {
+                setRating(Number(e.target.value));
+                handleInputInteraction(); 
+              }}
+              className="border light:border-black bg-background rounded-lg p-2 w-full mb-4"
+              min="1"
+              max="5"
+            />
+            <textarea
+              placeholder="Comment"
+              value={comment}
+              onChange={(e) => {
+                setComment(e.target.value);
+                handleInputInteraction(); 
+              }}
+              className="border light:border-black bg-background rounded-lg p-2 w-full mb-4"
+            />
+            {doneError && <p className="text-red-600 mb-4">{doneError}</p>}
+            <div className="flex justify-end">
+              <button
+                onClick={handleDoneSubmit}
+                className="bg-green-500  text-white px-4 py-2 rounded-md mr-2 hover:bg-green-600 transition-colors duration-300"
+              >
+                Submit Rating
+              </button>
+              <button
+                onClick={() => setShowDoneModal(false)}
+                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 transition-colors duration-300"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

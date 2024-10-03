@@ -94,9 +94,9 @@ const CategoryPage = () => {
         </h1>
 
         {loading && (
-          <div className="mt-10 text-center">
-            <p className="text-lg text-gray-600">Loading services...</p>
-          </div>
+              <div className="flex justify-center items-center h-full">
+                <div className="loader border-t-4 border-blue-500 border-solid rounded-full w-12 h-12 animate-spin"></div>
+              </div>
         )}
 
         {error && (

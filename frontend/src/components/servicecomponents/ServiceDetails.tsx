@@ -13,16 +13,15 @@ const ServiceDetails = () => {
   const [service, setService] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>("overview");
   const [selecteddate, setDate] = useState<string>("");
   const [time, setTime] = useState<string>("");
   const [requestStatus, setRequestStatus] = useState<{
     error: string | null;
-    success: string | null;
-  }>({
+}>({
     error: null,
-    success: null,
-  });
+});
 
   const navigate = useNavigate();
   const authContext = useAuth();
@@ -38,6 +37,7 @@ const ServiceDetails = () => {
         setError(error.message || "Failed to fetch service details");
       } finally {
         setLoading(false);
+
       }
     };
 
@@ -72,30 +72,35 @@ const ServiceDetails = () => {
           },
         }
       );
-      setRequestStatus({
-        error: null,
-        success: "Service request sent successfully!",
-      });
+    
       setDate("");
       setTime("");
+      setSuccessMessage("Service request sent successfully!");
+      setTimeout(() => {
+        setSuccessMessage(null); 
+    }, 10000);
     } catch (error: any) {
       console.error("Error fetching service details:", error);
       setRequestStatus({
         error: error.message || "Failed to send service request",
-        success: null,
       });
     } finally {
       setLoading(false);
+      setRequestStatus({error:null});
     }
   };
 
+ 
+
+
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-full">
+      <div className="flex justify-center items-center h-screen">
         <div className="loader border-t-4 border-blue-500 border-solid rounded-full w-12 h-12 animate-spin"></div>
       </div>
     );
   }
+  
 
   if (error) {
     return <div>Error: {error}</div>;
@@ -387,11 +392,13 @@ const ServiceDetails = () => {
                 {isLoggedIn ? "Request Now" : "Sign In Now"}
               </button>
               {requestStatus.error && (
-                <p className="text-red-500">{requestStatus.error}</p>
+                <p className="text-red-500 mt-2">{requestStatus.error}</p>
               )}
-              {requestStatus.success && (
-                <p className="text-green-500">{requestStatus.success}</p>
-              )}
+             {successMessage && (
+    <div className="fixed bottom-0 left-0 mb-4 ml-4 bg-green-100 text-green-700 border border-green-400 p-3 rounded shadow-lg">
+        {successMessage}
+    </div>
+)}
             </div>
           </div>
         ) : (

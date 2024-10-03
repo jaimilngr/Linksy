@@ -86,24 +86,28 @@ model Ticket {
   role           String
   notificationId String?       @unique
   notification   Notification?
-
+  cancellationReason String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
   user         User?            @relation("UserTickets", fields: [userId], references: [id])
   provider     ServiceProvider? @relation("ProviderTickets", fields: [providerId], references: [id])
   service      Service          @relation("ServiceTickets", fields: [serviceId], references: [id])
   serviceOwner ServiceProvider  @relation("ServiceOwnerTickets", fields: [serviceownedId], references: [id])
+  reviews      Review[]         @relation("TicketToReviews")
 }
 
 enum TicketStatus {
   open
-  closed
+  cancel
+  rejected
+  done
 }
 
 model Review {
   id        Int      @id @default(autoincrement())
-  serviceId String
+  ticketId  Int
+  ticket    Ticket   @relation("TicketToReviews", fields: [ticketId], references: [id], onDelete: Cascade) 
+  serviceId String   
   service   Service  @relation(fields: [serviceId], references: [id])
   rating    Float
   comment   String?
