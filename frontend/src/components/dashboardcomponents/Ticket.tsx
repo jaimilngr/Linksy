@@ -166,19 +166,19 @@ export const Ticket = () => {
     );
   }
 
-  const openTickets = tickets.filter((ticket) => ticket.status === 'open');
-  const previousTickets = tickets.filter((ticket) => ticket.status === 'done' || ticket.status === 'cancel');
+  const openTickets = tickets.filter((ticket) => ticket.status === 'pending'|| ticket.status === 'working');
+  const previousTickets = tickets.filter((ticket) => ticket.status === 'done' || ticket.status === 'cancel' || ticket.status === 'rejected');
 
   return (
     <div className="px-4 py-8 max-w-3xl">
       <h3 className="text-3xl font-bold text-text mb-8 text-center">Your Service Tickets</h3>
       {error && <p className="text-red-600">{error}</p>}
 
-      {/* Open Tickets Section */}
+      {/* pending , working Tickets Section */}
       <div>
         <h4 className="text-2xl font-semibold mb-4 text-text">Active Tickets</h4>
         {openTickets.length === 0 ? (
-          <p className="text-gray-500">No open service requests at the moment.</p>
+          <p className="text-gray-500">No active service requests at the moment.</p>
         ) : (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {openTickets.map((ticket) => (

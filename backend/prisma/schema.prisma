@@ -44,11 +44,12 @@ model ServiceProvider {
   tokenExpiresAt    DateTime?
   services          Service[]           @relation("ProviderServices")
   comments          Comment[]
-  notifications Notification[]
-  tickets       Ticket[]       @relation("ProviderTickets")
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  ownedServiceTickets Ticket[]        @relation("ServiceOwnerTickets")  
+  notifications     Notification[]      @relation("ProviderNotifications") // Relation for notifications related to this provider
+  ownedNotifications Notification[]      @relation("ServiceOwnerNotifications") // New relation for notifications related to this service owner
+  tickets           Ticket[]            @relation("ProviderTickets")
+  ownedServiceTickets Ticket[]          @relation("ServiceOwnerTickets")  
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
 }
 
 model Service {
@@ -75,29 +76,31 @@ model Service {
 }
 
 model Ticket {
-  id             Int           @id @default(autoincrement())
-  userId         String?
-  providerId     String?
-  serviceId      String
-  serviceownedId String
-  status         TicketStatus
-  time           String
-  date           DateTime
-  role           String
-  notificationId String?       @unique
-  notification   Notification?
-  cancellationReason String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user         User?            @relation("UserTickets", fields: [userId], references: [id])
-  provider     ServiceProvider? @relation("ProviderTickets", fields: [providerId], references: [id])
-  service      Service          @relation("ServiceTickets", fields: [serviceId], references: [id])
-  serviceOwner ServiceProvider  @relation("ServiceOwnerTickets", fields: [serviceownedId], references: [id])
-  reviews      Review[]         @relation("TicketToReviews")
+  id                   Int             @id @default(autoincrement())
+  userId               String?
+  providerId           String?
+  serviceId            String
+  serviceownedId       String
+  status               TicketStatus
+  time                 String
+  date                 DateTime
+  role                 String
+  notificationId       String?         @unique
+  notification         Notification?
+  cancellationReason    String?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  user                 User?            @relation("UserTickets", fields: [userId], references: [id])
+  provider             ServiceProvider? @relation("ProviderTickets", fields: [providerId], references: [id])
+  service              Service          @relation("ServiceTickets", fields: [serviceId], references: [id])
+  serviceOwner         ServiceProvider   @relation("ServiceOwnerTickets", fields: [serviceownedId], references: [id])
+  reviews              Review[]         @relation("TicketToReviews")
 }
 
 enum TicketStatus {
-  open
+  pending
+  working
   cancel
   rejected
   done
@@ -129,14 +132,17 @@ model Comment {
 }
 
 model Notification {
-  id         String           @id @default(uuid())
-  userId     String?
-  providerId String?
-  ticketId   Int?             @unique
-  content    String
-  read       Boolean          @default(false)
-  user       User?            @relation(fields: [userId], references: [id])
-  provider   ServiceProvider? @relation(fields: [providerId], references: [id])
-  ticket     Ticket?          @relation(fields: [ticketId], references: [id])
-  createdAt  DateTime         @default(now())
+  id              String           @id @default(uuid())
+  userId          String?
+  providerId      String?
+  serviceownedId  String?         
+  ticketId        Int?             @unique
+  content         String
+  read            Boolean          @default(false)
+
+  user            User?            @relation(fields: [userId], references: [id])
+  provider        ServiceProvider?  @relation("ProviderNotifications", fields: [providerId], references: [id]) 
+  serviceOwner    ServiceProvider?  @relation("ServiceOwnerNotifications", fields: [serviceownedId], references: [id]) 
+  ticket          Ticket?          @relation(fields: [ticketId], references: [id])
+  createdAt       DateTime         @default(now())
 }

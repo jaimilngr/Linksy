@@ -4,7 +4,9 @@ import { MyServices } from "../components/dashboardcomponents/myservicescomponen
 import { Password } from "../components/dashboardcomponents/Password";
 import { Profile } from "../components/dashboardcomponents/Profile";
 import { Reviews } from "../components/dashboardcomponents/Reviews";
+import { Manager } from "../components/dashboardcomponents/Manager";
 import { Schedule } from "../components/dashboardcomponents/Schedule";
+
 import { Support } from "../components/dashboardcomponents/Support";
 import { Ticket } from "../components/dashboardcomponents/Ticket";
 import { useAuth } from "../Context/Authcontext";
@@ -26,7 +28,9 @@ const Dashboard = () => {
         return <MyServices />;
       case "Reviews":
         return <Reviews />;
-      case "Schedule":
+      case "Manager":
+        return <Manager />;
+        case "Schedule":
         return <Schedule />;
       case "Support":
         return <Support />;
@@ -43,6 +47,7 @@ const Dashboard = () => {
       "Service Ticket",
       "My Services",
       "Reviews",
+      "Manager",
       "Schedule",
       "Support",
     ],

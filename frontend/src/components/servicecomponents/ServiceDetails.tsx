@@ -395,7 +395,7 @@ const ServiceDetails = () => {
                 <p className="text-red-500 mt-2">{requestStatus.error}</p>
               )}
              {successMessage && (
-    <div className="fixed bottom-0 left-0 mb-4 ml-4 bg-green-100 text-green-700 border border-green-400 p-3 rounded shadow-lg">
+    <div className="fixed top-24 right-0 mb-4 ml-4 bg-green-100 text-green-700 border border-green-400 p-3 rounded shadow-lg">
         {successMessage}
     </div>
 )}

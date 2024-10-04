@@ -341,11 +341,9 @@ export const MyServices = () => {
       {error && <p className="text-red-600 mb-4">{error}</p>}
 
       {loading ? (
-        <div className="sliding-bars absolute inset-0">
-          <div></div>
-          <div></div>
-          <div></div>
-        </div>
+            <div className="flex justify-center items-center h-full">
+              <div className="loader border-t-4 border-blue-500 border-solid rounded-full w-12 h-12 animate-spin flex justify-center items-center"></div>
+            </div>
       ) : servicesArray.length === 0 ? (
         <p className="text-gray-600 mb-4">
           You do not have any services. Create a new service below.

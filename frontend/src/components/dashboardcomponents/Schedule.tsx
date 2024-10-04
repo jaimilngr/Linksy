@@ -43,7 +43,7 @@ export const Schedule = () => {
             Authorization: `Bearer ${token}`,
           },
         });
-        console.log('Fetched Schedule:', response.data); // Log the response for debugging
+        console.log('Fetched Schedule:', response.data);
         setSchedule(response.data);
       } catch (err) {
         setError('Failed to fetch schedule data.');
@@ -57,7 +57,7 @@ export const Schedule = () => {
 
   return (
     <div className="p-6 bg-background rounded-lg">
-      <h3 className="text-2xl font-semibold mb-6">Schedule</h3>
+      <h3 className="text-2xl font-semibold mb-6">Scheduled Services</h3>
       
       {loading ? (
         <div className="flex justify-center items-center h-full">

@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { PrismaClient } from '@prisma/client/edge';
 import { withAccelerate } from '@prisma/extension-accelerate';
 import { jwtAuthMiddleware } from './user'; 
+import { Status } from 'cloudinary';
 
 export const serviceRouter = new Hono<{
   Bindings: {
@@ -293,7 +294,7 @@ serviceRouter.get('/ticket', async (c) => {
       where: {
         OR: [
           { userId: userId },    
-          { providerId: userId }  
+          { providerId: userId } ,
         ]
       },
       select: {
@@ -310,9 +311,7 @@ serviceRouter.get('/ticket', async (c) => {
       },
     });
 
-    if (servicereq.length === 0) {
-      return c.json({ error: 'No tickets found or access denied' }, 404);
-    }
+  
     return c.json(servicereq);
   } catch (error: any) {
     console.error('Error fetching service requests: ', error);
@@ -430,6 +429,97 @@ serviceRouter.put('/ticket/done/:ticketId', jwtAuthMiddleware, async (c) => {
   }
 });
 
+// management status request
+
+serviceRouter.put('/ticket/:status/:ticketId', jwtAuthMiddleware, async (c) => {
+  const user = (c.req as any).user;
+  const prisma = new PrismaClient({
+    datasourceUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+
+  const userId = user.id as string;
+  const ticketId = c.req.param('ticketId');
+  const status = c.req.param('status');
+
+  try {
+    const ticketIdNumber = parseInt(ticketId as string, 10);
+
+    const ticket = await prisma.ticket.findUnique({
+      where: {
+        id: ticketIdNumber,
+        serviceownedId: userId,
+      },
+      include: {
+        user: true,
+        provider: true,
+        service: true,
+      },
+    });
+
+    if (!ticket) {
+      return c.json({ error: 'Ticket not found' }, 404);
+    }
+
+    if (!ticket.serviceownedId || ticket.serviceownedId !== userId) {
+      return c.json({ error: 'Unauthorized action' }, 403);
+    }
+
+    if (status !== 'working' && status !== 'rejected') {
+      return c.json({ error: 'Invalid status parameter' }, 400);
+    }
+
+     await prisma.ticket.update({
+      where: {
+        id: ticketIdNumber,
+      },
+      data: {
+        status: status, 
+      },
+    });
+    const serviceName = ticket.service?.name || "the service"; 
+    let notificationMessage = `Your ticket status has been ${status === 'working' ? 'accepted' : status}. for ${serviceName}.`;
+
+    if (ticket.userId) {
+      const userExists = await prisma.user.findUnique({
+        where: { id: ticket.userId },
+      });
+      if (userExists) {
+        await prisma.notification.create({
+          data: {
+            userId: ticket.userId,
+            content: notificationMessage,
+            ticketId: ticketIdNumber,
+          },
+        });
+      } else {
+        return c.json({ error: `User with ID ${ticket.userId} does not exist. Notification not created.` }, 400);
+      }
+    } else if (ticket.providerId) {
+      const providerExists = await prisma.serviceProvider.findUnique({
+        where: { id: ticket.providerId },
+      });
+      if (providerExists) {
+        await prisma.notification.create({
+          data: {
+            providerId: ticket.providerId,
+            content: notificationMessage,
+            ticketId: ticketIdNumber,
+          },
+        });
+      } else {
+        return c.json({ error: `Provider with ID ${ticket.providerId} does not exist. Notification not created.` }, 400);
+      }
+    }
+
+
+    return c.json({ message: 'Ticket status updated successfully' }, 200);
+  } catch (error: any) {
+    console.error('Error updating ticket status: ', error);
+    return c.json({ error: 'Failed to update ticket status', details: error.message }, 500);
+  }
+});
+
+
 // Create service request 
 
 serviceRouter.post('/createreq/:serviceid', async (c) => {
@@ -468,12 +558,26 @@ serviceRouter.post('/createreq/:serviceid', async (c) => {
         serviceId: serviceId,
         providerId: providerId, 
         serviceownedId: serviceownedId, 
-        status: "open",
+        status: "pending",
         time: body.time,
         date: body.date,
         role: body.role,
       },
     });
+
+    const notificationContent = `New ticket by ${user.name}`; 
+    
+    await prisma.notification.create({
+      data: {
+        userId: body.role === 'service' ? null : userId, 
+        providerId: providerId, 
+        ticketId: servicereq.id, 
+        content: notificationContent,
+        read: false,
+        serviceownedId: serviceownedId, 
+      },
+    });
+
 
     return c.json(servicereq);
   } catch (error: any) {
@@ -498,6 +602,7 @@ serviceRouter.get('/schedule',jwtAuthMiddleware, async (c) => {
           { role: "service" },
           { role: "user" }
         ],
+        status:"working",
       },
       select: {
         id: true,
@@ -533,6 +638,60 @@ serviceRouter.get('/schedule',jwtAuthMiddleware, async (c) => {
     return c.json({ error: 'Failed to fetch service requests', details: error.message }, 500);
   }
 });
+
+
+// manage route 
+serviceRouter.get('/manage',jwtAuthMiddleware, async (c) => {
+  const user = (c.req as any).user;
+  const prisma = new PrismaClient({
+    datasourceUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+  const userId = user.id as string;
+  try {
+    const schedule = await prisma.ticket.findMany({
+      where: {
+        serviceownedId: userId,
+        OR: [
+          { role: "service" },
+          { role: "user" }
+        ],
+        status:"pending",
+      },
+      select: {
+        id: true,
+        serviceId: true,
+        time: true,
+        date: true,
+        status: true,
+        service: {
+          select: {
+            name: true,
+            price: true,
+            category: true,
+          }
+        },
+        user: {
+          select: {
+            name: true,
+            address: true,
+            contactNo: true,
+          }
+        },
+        provider: {
+          select: {
+            name: true,
+            contactNo: true,
+          }
+        }
+      },
+    });
+    return c.json(schedule);
+  } catch (error: any) {
+    console.error('Error fetching service requests: ', error);
+    return c.json({ error: 'Failed to fetch service requests', details: error.message }, 500);
+  }
+});
+
 
 // fetch service
 serviceRouter.get('/:serviceId', async (c) => {
