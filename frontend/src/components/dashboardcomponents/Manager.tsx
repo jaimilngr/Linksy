@@ -85,7 +85,7 @@ export const Manager = () => {
         },
       });
       console.log(`${currentAction === 'accept' ? 'Accepted' : 'Rejected'} ticket with ID: ${currentTicketId}`);
-      fetchManager(); // Reload the manager data
+     await fetchManager(); 
     } catch (error) {
       console.error(`Error ${currentAction === 'accept' ? 'accepting' : 'rejecting'} ticket:`, error);
     } finally {

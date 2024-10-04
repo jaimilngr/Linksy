@@ -181,12 +181,15 @@ export const Navbar = () => {
                           Dashboard
                         </Link>
                       </li>
+
                       <li>
-                        <p className="block px-4 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white">
-                          Notifications
-                        </p>
-                      </li>
-                     
+                        <Link
+                          to="/updates"
+                          className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+                        >
+                          Updates
+                        </Link>
+                      </li> 
                     </ul>
                     <div className="py-1">
                       <Link

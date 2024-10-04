@@ -174,49 +174,51 @@ export const Ticket = () => {
       <h3 className="text-3xl font-bold text-text mb-8 text-center">Your Service Tickets</h3>
       {error && <p className="text-red-600">{error}</p>}
 
-      {/* pending , working Tickets Section */}
-      <div>
-        <h4 className="text-2xl font-semibold mb-4 text-text">Active Tickets</h4>
-        {openTickets.length === 0 ? (
-          <p className="text-gray-500">No active service requests at the moment.</p>
-        ) : (
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            {openTickets.map((ticket) => (
-              <div
-                key={ticket.id}
-                className="p-6 mb-4 rounded-xl bg-[#5db87c99] backdrop-blur-lg shadow-lg border border-green-300 hover:shadow-xl transition-shadow duration-300"
+  {/* Active Tickets Section */}
+<div>
+  <h4 className="text-2xl font-semibold mb-4 text-text">Active Tickets</h4>
+  {openTickets.length === 0 ? (
+    <p className="text-gray-500">No active service requests at the moment.</p>
+  ) : (
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      {openTickets.map((ticket) => (
+        <div
+          key={ticket.id}
+          className="p-6 mb-4 rounded-xl bg-[#5db87c99] backdrop-blur-lg shadow-lg border border-green-300 hover:shadow-xl transition-shadow duration-300"
+        >
+          <p className="text-lg font-semibold text-text">
+            <strong>Status:</strong> {ticket.status}
+          </p>
+          <p className="text-lg text-text">
+            <strong>Service:</strong> {ticket.service.name}
+          </p>
+          <p className="text-text">
+            <strong>Date:</strong> {formatDate(ticket.date)}
+          </p>
+          <p className="text-text">
+            <strong>Time:</strong> {ticket.time}
+          </p>
+          <div className="flex gap-4 mt-4">
+            <button
+              onClick={() => handleCancelRequest(ticket.id)}
+              className="bg-red-500 text-white px-4 py-2 rounded-md w-full hover:bg-red-600 transition-colors duration-300"
+            >
+              Cancel Request
+            </button>
+            {ticket.status !== 'pending' && (
+              <button
+                onClick={() => handleMarkAsDone(ticket.id)}
+                className="bg-blue-500 text-white px-4 py-2 rounded-md w-full hover:bg-blue-600 transition-colors duration-300"
               >
-                <p className="text-lg font-semibold text-text">
-                  <strong>Status:</strong> {ticket.status}
-                </p>
-                <p className="text-lg text-text">
-                  <strong>Service:</strong> {ticket.service.name}
-                </p>
-                <p className="text-text">
-                  <strong>Date:</strong> {formatDate(ticket.date)}
-                </p>
-                <p className="text-text">
-                  <strong>Time:</strong> {ticket.time}
-                </p>
-                <div className="flex gap-4 mt-4">
-                  <button
-                    onClick={() => handleCancelRequest(ticket.id)}
-                    className="bg-red-500 text-white px-4 py-2 rounded-md w-full hover:bg-red-600 transition-colors duration-300"
-                  >
-                    Cancel Request
-                  </button>
-                  <button
-                    onClick={() => handleMarkAsDone(ticket.id)}
-                    className="bg-blue-500 text-white px-4 py-2 rounded-md w-full hover:bg-blue-600 transition-colors duration-300"
-                  >
-                    Done
-                  </button>
-                </div>
-              </div>
-            ))}
+                Done
+              </button>
+            )}
           </div>
-        )}
-      </div>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
 
       {/* Previous Tickets Section */}
       <div className="mt-12">

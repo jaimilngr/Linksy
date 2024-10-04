@@ -10,7 +10,7 @@ const CategoryPage = () => {
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate(); // Added navigate hook
+  const navigate = useNavigate(); 
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -117,15 +117,15 @@ const CategoryPage = () => {
               <div
                 key={service.id}
                 className="border border-gray-300 p-6 rounded-lg shadow-lg bg-[#ebeef4] dark:bg-[#374151] flex flex-col"
-                onClick={() => navigate(`/service/${service.id}`)} // Navigate to service details on click
+                onClick={() => navigate(`/service/${service.id}`)} 
               >
                 <h2 className="text-xl md:text-2xl font-semibold mb-2">
                   {service.name}
                 </h2>
                 <div className="flex items-center mb-2">
                   {renderStars(service.rating || 0)}
-                  <span className="ml-2">
-                    ({service.totalRatings || 0} ratings)
+                  <span className="ml-2"> 
+                    ( {service.reviewCount || 0} ratings )
                   </span>
                 </div>
                 <p className="mb-4">

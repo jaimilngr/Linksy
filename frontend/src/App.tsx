@@ -6,6 +6,7 @@ import Dashboard from "./pages/Dashboard";
 import CategoryPage from "../src/components/Categorycomponents/CategoryPage";
 import VerifyEmail from "./components/Authcomponents/VerifyEmail";
 import ServiceDetails from "./components/servicecomponents/ServiceDetails";
+import Updates from "./pages/Updates";
 
 function App() {
   return (
@@ -19,7 +20,7 @@ function App() {
             <Route path="/categories/:title" element={<CategoryPage />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/service/:id" element={<ServiceDetails  />} />
-
+            <Route path="/updates" element={<Updates />} />
           </Routes>
         </BrowserRouter>
       </AuthProvider>

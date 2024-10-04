@@ -19,9 +19,9 @@ const ServiceDetails = () => {
   const [time, setTime] = useState<string>("");
   const [requestStatus, setRequestStatus] = useState<{
     error: string | null;
-}>({
+  }>({
     error: null,
-});
+  });
 
   const navigate = useNavigate();
   const authContext = useAuth();
@@ -37,7 +37,6 @@ const ServiceDetails = () => {
         setError(error.message || "Failed to fetch service details");
       } finally {
         setLoading(false);
-
       }
     };
 
@@ -59,39 +58,39 @@ const ServiceDetails = () => {
       });
       return;
     }
-    const date  = selecteddate ? new Date(selecteddate).toISOString() : null;
-    const role = Cookies.get("role")
+    const date = selecteddate ? new Date(selecteddate).toISOString() : null;
+    const role = Cookies.get("role");
     try {
       setLoading(true);
       await axios.post(
         `${BACKEND_URL}/api/v1/service/createreq/${id}`,
-        { date, time,role },
+        { date, time, role },
         {
           headers: {
             Authorization: `Bearer ${Cookies.get("token") || ""}`,
           },
         }
       );
-    
+
       setDate("");
       setTime("");
       setSuccessMessage("Service request sent successfully!");
       setTimeout(() => {
-        setSuccessMessage(null); 
-    }, 10000);
+        setSuccessMessage(null);
+      }, 10000);
     } catch (error: any) {
-      console.error("Error fetching service details:", error);
+      console.error("Error sending service request:", error);
+      const backendErrorMessage =
+        error.response?.data?.error ||
+        error.message ||
+        "Failed to send service request";
       setRequestStatus({
-        error: error.message || "Failed to send service request",
+        error: backendErrorMessage,
       });
     } finally {
       setLoading(false);
-      setRequestStatus({error:null});
     }
   };
-
- 
-
 
   if (loading) {
     return (
@@ -100,7 +99,6 @@ const ServiceDetails = () => {
       </div>
     );
   }
-  
 
   if (error) {
     return <div>Error: {error}</div>;
@@ -123,20 +121,29 @@ const ServiceDetails = () => {
             </div>
           </div>
         );
-      case "policies":
-        return (
-          <div className="rounded-lg">
-            <h2 className="text-3xl font-bold mb-4 border-b-2 border-blue-600 pb-2">
-              Policies
-            </h2>
-            <p className="text-lg mb-4">{service.policies}</p>
-          </div>
-        );
       case "reviews":
         return (
           <div className="rounded-lg">
             <h2 className="text-3xl font-bold mb-4 border-b-2 border-blue-600 pb-2">
               Reviews
+            </h2>
+
+            {service.reviews && service.reviews.length > 0 ? (
+              service.reviews.map((review: any) => (
+                <div key={review.id} className="mb-4 p-4 border border-gray-200 rounded-lg bg-[#c3ccd6] dark:bg-background hover:shadow-lg transition-shadow duration-200 ease-in-out">
+                  <span className="font-bold text-lg">{review.ticket.user.name || review.ticket.provider.name} :</span>  <span>  {review.comment}</span>
+                </div>
+              ))
+            ) : (
+              <p>No reviews available.</p>
+            )}
+          </div>
+        );
+      case "comment":
+        return (
+          <div className="rounded-lg">
+            <h2 className="text-3xl font-bold mb-4 border-b-2 border-blue-600 pb-2">
+              Comment
             </h2>
 
             <p className="text-lg mb-4">
@@ -145,22 +152,50 @@ const ServiceDetails = () => {
             </p>
           </div>
         );
-      case "map":
-        return (
-          <div className="rounded-lg">
-            <h2 className="text-3xl font-bold mb-4 border-b-2 border-blue-600 pb-2">
-              Map
-            </h2>
-            <p className="text-lg mb-4">{service.mapLocation}</p>
-          </div>
-        );
+        case "map":
+          return (
+            <div className="rounded-lg flex flex-col">
+              <h2 className="text-3xl font-bold mb-4 border-b-2 border-blue-600 pb-2">
+                Map
+              </h2>
+        
+              <p className="text-lg mb-4 text-center">{service.mapLocation}</p>
+              <div className="flex justify-center items-center">
+                {service.latitude && service.longitude ? (
+                  <>
+                    <iframe
+                      width="1000"
+                      height="370"
+                      style={{ border: "0" }}
+                      scrolling="no"
+                      src={`https://maps.google.com/maps?q=${service.latitude},${service.longitude}&hl=en&z=14&output=embed`}
+                    ></iframe>
+                    <br />
+                  
+                  </>
+                ) : (
+                  <p>No location available.</p>
+                )}
+              </div>
+            </div>
+          );
+        
+        
       case "availability":
         return (
           <div className="rounded-lg">
             <h2 className="text-3xl font-bold mb-4 border-b-2 border-blue-600 pb-2">
               Availability
             </h2>
-            <p className="text-lg mb-4">{service.availability}</p>
+            <p
+              className={`text-lg mb-4 ${
+                service.availability === "yes"
+                  ? "text-green-500"
+                  : "text-red-500"
+              }`}
+            >
+              {service.availability === "yes" ? "Available" : "Not Available"}
+            </p>{" "}
           </div>
         );
       default:
@@ -266,8 +301,8 @@ const ServiceDetails = () => {
                     className="block w-full p-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300"
                   >
                     <option value="overview">Overview</option>
-                    <option value="policies">Policies</option>
                     <option value="reviews">Reviews</option>
+                    <option value="comment">Comment</option>
                     <option value="map">Map</option>
                     <option value="availability">Availability</option>
                   </select>
@@ -290,19 +325,6 @@ const ServiceDetails = () => {
                   </button>
                   <button
                     className={`relative py-2 px-4 ${
-                      activeTab === "policies"
-                        ? "text-blue-600 dark:text-blue-400"
-                        : "text-gray-700 dark:text-gray-300"
-                    }`}
-                    onClick={() => setActiveTab("policies")}
-                  >
-                    Policies
-                    {activeTab === "policies" && (
-                      <div className="absolute bottom-0 left-0 h-1 w-full bg-blue-600 dark:bg-blue-400" />
-                    )}
-                  </button>
-                  <button
-                    className={`relative py-2 px-4 ${
                       activeTab === "reviews"
                         ? "text-blue-600 dark:text-blue-400"
                         : "text-gray-700 dark:text-gray-300"
@@ -310,7 +332,20 @@ const ServiceDetails = () => {
                     onClick={() => setActiveTab("reviews")}
                   >
                     Reviews
-                    {activeTab === "reviews" && (
+                    {activeTab === "Reviews" && (
+                      <div className="absolute bottom-0 left-0 h-1 w-full bg-blue-600 dark:bg-blue-400" />
+                    )}
+                  </button>
+                  <button
+                    className={`relative py-2 px-4 ${
+                      activeTab === "comment"
+                        ? "text-blue-600 dark:text-blue-400"
+                        : "text-gray-700 dark:text-gray-300"
+                    }`}
+                    onClick={() => setActiveTab("comment")}
+                  >
+                    Comments
+                    {activeTab === "Comment" && (
                       <div className="absolute bottom-0 left-0 h-1 w-full bg-blue-600 dark:bg-blue-400" />
                     )}
                   </button>
@@ -375,31 +410,39 @@ const ServiceDetails = () => {
                   />{" "}
                 </p>
               </div>
-              <button
-                className={`p-2 text-white py-2 rounded justify-center items-center flex transition duration-200 ${
-                  isLoggedIn
-                    ? "bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600"
-                    : "bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600"
-                }`}
-                onClick={() => {
-                  if (isLoggedIn) {
-                    CreateServiceRequest();
-                  } else {
-                    navigate("/signup");
-                  }
-                }}
-              >
-                {isLoggedIn ? "Request Now" : "Sign In Now"}
-              </button>
-              {requestStatus.error && (
-                <p className="text-red-500 mt-2">{requestStatus.error}</p>
-              )}
-             {successMessage && (
-    <div className="fixed top-24 right-0 mb-4 ml-4 bg-green-100 text-green-700 border border-green-400 p-3 rounded shadow-lg">
-        {successMessage}
-    </div>
-)}
-            </div>
+
+                {service.availability === "yes" ? (
+                  <button
+                    className={`p-2 text-white py-2 rounded justify-center items-center flex transition duration-200 ${
+                      isLoggedIn
+                        ? "bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600"
+                        : "bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600"
+                    }`}
+                    onClick={() => {
+                      if (isLoggedIn) {
+                        CreateServiceRequest();
+                      } else {
+                        navigate("/signup");
+                      }
+                    }}
+                  >
+                    {isLoggedIn ? "Request Now" : "Sign In Now"}
+                  </button>
+                ) : (
+                  <p className="text-red-500 font-semibold text-lg mt-4">
+                    Not Available Currently
+                  </p>
+                )}
+
+                {requestStatus.error && (
+                  <p className="text-red-500 mt-2">{requestStatus.error}</p>
+                )}
+                {successMessage && (
+                  <div className="fixed top-24 right-0 mb-4 ml-4 bg-green-100 text-green-700 border border-green-400 p-3 rounded shadow-lg">
+                    {successMessage}
+                  </div>
+                )}
+</div>
           </div>
         ) : (
           <div>No service found</div>

@@ -38,6 +38,7 @@ export const MyServices = () => {
     timing: "",
     category: "",
     contactNo: "",
+    availability: "Yes",
     lat: null as number | null,
     lng: null as number | null,
   });
@@ -158,10 +159,11 @@ export const MyServices = () => {
         serviceType: "",
         name: "",
         description: "",
-        price:0,
+        price: 0,
         timing: "",
         category: "",
         contactNo: "",
+        availability: "yes",
         lat: null,
         lng: null,
       });
@@ -207,6 +209,7 @@ export const MyServices = () => {
         timing: "",
         category: "",
         contactNo: "",
+        availability: service.availability || "Yes",
         lat: null,
         lng: null,
       });
@@ -274,6 +277,7 @@ export const MyServices = () => {
       timing: service.timing,
       category: service.category,
       contactNo: service.contactNo,
+      availability: service.availability || "Yes",
       lat: service.lat,
       lng: service.lng,
     });
@@ -291,6 +295,7 @@ export const MyServices = () => {
       timing: "",
       category: "",
       contactNo: "",
+      availability: "Yes",
       lat: null,
       lng: null,
     });
@@ -341,9 +346,9 @@ export const MyServices = () => {
       {error && <p className="text-red-600 mb-4">{error}</p>}
 
       {loading ? (
-            <div className="flex justify-center items-center h-full">
-              <div className="loader border-t-4 border-blue-500 border-solid rounded-full w-12 h-12 animate-spin flex justify-center items-center"></div>
-            </div>
+        <div className="flex justify-center items-center h-full">
+          <div className="loader border-t-4 border-blue-500 border-solid rounded-full w-12 h-12 animate-spin flex justify-center items-center"></div>
+        </div>
       ) : servicesArray.length === 0 ? (
         <p className="text-gray-600 mb-4">
           You do not have any services. Create a new service below.
@@ -449,6 +454,24 @@ export const MyServices = () => {
                           className="border no-spinner border-gray-300 rounded p-2 w-full dark:bg-[#374151]"
                           required
                         />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="availability"
+                          className="block text-sm font-medium dark:text-gray-300"
+                        >
+                          Availability
+                        </label>
+                        <select
+                          name="availability"
+                          value={newService.availability}
+                          onChange={handleInputChange}
+                          className="border border-gray-300 rounded p-2 w-full dark:bg-[#374151]"
+                          required
+                        >
+                          <option value="Yes">Yes</option>
+                          <option value="No">No</option>
+                        </select>
                       </div>
                       <div>
                         <label className="block ">Timing</label>
@@ -599,6 +622,23 @@ export const MyServices = () => {
                 className="border no-spinner border-gray-300 rounded p-2 w-full dark:bg-[#374151]"
                 required
               />
+            </div>
+            <div>
+              <label
+                className="block text-sm font-medium dark:text-gray-300"
+              >
+                Availability
+              </label>
+              <select
+                name="availability"
+                value={newService.availability}
+                onChange={handleInputChange}
+                className="border border-gray-300 rounded p-2 w-full dark:bg-[#374151]"
+                required
+              >
+                <option value="Yes">Yes</option>
+                <option value="No">No</option>
+              </select>
             </div>
             <div>
               <label className="block ">Timing</label>

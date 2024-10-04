@@ -18,6 +18,7 @@ interface ServiceCreateBody {
   timing: string;
   category: string;
   contactNo: string;
+  availability: string;
   lat: number;
   lng: number;
 }
@@ -76,6 +77,7 @@ serviceRouter.post('/create', async (c) => {
         description: body.description,
         price: body.price,
         timing: body.timing,
+        availability: body.availability,
         category: body.category,
         contactNo: body.contactNo,
         latitude: body.lat,
@@ -154,6 +156,7 @@ serviceRouter.put('/update/:serviceid', async (c) => {
         price: body.price,
         timing: body.timing,
         category: body.category,
+        availability: body.availability,
         contactNo: body.contactNo,
         latitude: body.lat,
         longitude: body.lng,
@@ -238,6 +241,7 @@ serviceRouter.get('/closest', async (c) => {
         providerId: true,
         name: true,
         description: true,
+        reviewCount:true,
         price: true,
         timing: true,
         contactNo: true,
@@ -250,7 +254,7 @@ serviceRouter.get('/closest', async (c) => {
     if (services.length === 0) {
       return c.json([], 200);
     }
-
+    
     const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
       const R = 6371; 
       const dLat = (lat2 - lat1) * (Math.PI / 180);
@@ -305,7 +309,7 @@ serviceRouter.get('/ticket', async (c) => {
         status: true,            
         service: {
           select: {
-            name: true           
+            name: true,           
           }
         }
       },
@@ -329,7 +333,9 @@ serviceRouter.put('/ticket/cancel/:ticketId', jwtAuthMiddleware, async (c) => {
 
   const userId = user.id as string;
   const ticketId = c.req.param('ticketId'); 
-  const { cancellationReason } = await c.req.json(); 
+  const { reason } = await c.req.json(); 
+
+
 
   try {
     const ticketIdNumber = parseInt(ticketId as string, 10);
@@ -341,6 +347,7 @@ serviceRouter.put('/ticket/cancel/:ticketId', jwtAuthMiddleware, async (c) => {
       include: {
         user: true,    
         provider: true,
+        serviceOwner:true,
       },
     });
 
@@ -352,17 +359,32 @@ serviceRouter.put('/ticket/cancel/:ticketId', jwtAuthMiddleware, async (c) => {
       return c.json({ error: 'Unauthorized action' }, 403);
     }
 
-    const cancelReq = await prisma.ticket.update({
+     await prisma.ticket.update({
       where: {
         id: ticketIdNumber,
       },
       data: {
         status: 'cancel',  
-        cancellationReason: cancellationReason || 'No reason provided', 
+        cancellationReason: reason || 'No reason provided', 
       },
     });
 
-    return c.json(cancelReq);
+
+     const notificationContent = `Ticket has been canceled. Reason: ${reason || 'No reason provided'}.`;
+     await prisma.notification.update({
+      where: {
+        ticketId: ticketIdNumber,
+      },
+       data: {
+         content: notificationContent,
+         userId: ticket.userId || null, 
+         providerId: ticket.providerId || null, 
+         serviceownedId: ticket.serviceownedId,
+       },
+     });
+
+
+    return c.json({ message : "ticket marked as cancelled "} , 200);  
   } catch (error: any) {
     console.error('Error canceling the ticket: ', error);
     return c.json({ error: 'Failed to cancel the ticket', details: error.message }, 500);
@@ -371,7 +393,6 @@ serviceRouter.put('/ticket/cancel/:ticketId', jwtAuthMiddleware, async (c) => {
 
 
 // done request 
-
 serviceRouter.put('/ticket/done/:ticketId', jwtAuthMiddleware, async (c) => {
   const user = (c.req as any).user;
   const prisma = new PrismaClient({
@@ -404,16 +425,17 @@ serviceRouter.put('/ticket/done/:ticketId', jwtAuthMiddleware, async (c) => {
       return c.json({ error: 'Unauthorized action' }, 403);
     }
 
-    const doneReq = await prisma.ticket.update({
+    await prisma.ticket.update({
       where: {
         id: ticketIdNumber,
+        status: 'working'
       },
       data: {
         status: 'done',
       },
     });
 
-    const review = await prisma.review.create({
+    await prisma.review.create({
       data: {
         ticketId: ticketIdNumber,
         serviceId: ticket.serviceId,
@@ -422,7 +444,30 @@ serviceRouter.put('/ticket/done/:ticketId', jwtAuthMiddleware, async (c) => {
       },
     });
 
-    return c.json({ doneReq, review });  
+    const calculateAverageRating = (reviews: { rating: number }[]) => {
+      if (reviews.length === 0) return 0;
+      const totalRating = reviews.reduce((acc, review) => acc + review.rating, 0);
+      return parseFloat((totalRating / reviews.length).toFixed(1));
+    };
+
+    const reviews = await prisma.review.findMany({
+      where: { serviceId: ticket.serviceId },
+      select: { rating: true },
+    });
+
+    const averageRating = calculateAverageRating(reviews);
+
+    const reviewCount = await prisma.review.count({
+      where: { serviceId: ticket.serviceId },
+    });
+    await prisma.service.update({
+      where: { id: ticket.serviceId },
+      data: { 
+        rating: averageRating,
+        reviewCount: reviewCount}, 
+    });
+
+    return c.json({ message: "Ticket marked as done and review created." }, 200);  
   } catch (error: any) {
     console.error('Error marking ticket as done and creating review: ', error);
     return c.json({ error: 'Failed to mark ticket as done and create review', details: error.message }, 500);
@@ -543,7 +588,9 @@ serviceRouter.post('/createreq/:serviceid', async (c) => {
     }
 
     const serviceownedId = service.providerId; 
-
+    if (userId === serviceownedId) {
+      return c.json({ error: "You can't request your own services." }, 403);
+    }
     const body: CreateServiceReqBody = await c.req.json();
 
     if (!body.date || !body.time || !body.role) {
@@ -565,8 +612,21 @@ serviceRouter.post('/createreq/:serviceid', async (c) => {
       },
     });
 
-    const notificationContent = `New ticket by ${user.name}`; 
-    
+    let notificationContent: string;
+    if (body.role === 'service') {
+      const providerUser = await prisma.serviceProvider.findUnique({
+        where: { id: userId }, 
+        select: { name: true },
+      });
+      notificationContent = `New service request by  ${providerUser?.name || 'Service Provider'}`;
+    } else {
+      const userMakingRequest = await prisma.user.findUnique({
+        where: { id: userId }, 
+        select: { name: true },
+      });
+      notificationContent = `New service request by ${userMakingRequest?.name || 'User'}`;
+    }
+
     await prisma.notification.create({
       data: {
         userId: body.role === 'service' ? null : userId, 
@@ -579,7 +639,7 @@ serviceRouter.post('/createreq/:serviceid', async (c) => {
     });
 
 
-    return c.json(servicereq);
+    return c.json({message: "request created"},200);
   } catch (error: any) {
     console.error('Error creating service request:', error);
     return c.json({ error: 'Failed to create service request', details: error.message }, 500);
@@ -648,7 +708,7 @@ serviceRouter.get('/manage',jwtAuthMiddleware, async (c) => {
   }).$extends(withAccelerate());
   const userId = user.id as string;
   try {
-    const schedule = await prisma.ticket.findMany({
+    const manage = await prisma.ticket.findMany({
       where: {
         serviceownedId: userId,
         OR: [
@@ -685,10 +745,55 @@ serviceRouter.get('/manage',jwtAuthMiddleware, async (c) => {
         }
       },
     });
-    return c.json(schedule);
+    return c.json(manage);
   } catch (error: any) {
     console.error('Error fetching service requests: ', error);
     return c.json({ error: 'Failed to fetch service requests', details: error.message }, 500);
+  }
+});
+
+// Fetch notifications
+serviceRouter.get('/notifications', jwtAuthMiddleware, async (c) => {
+  const user = (c.req as any).user;
+  const prisma = new PrismaClient({
+    datasourceUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+
+  const userId = user.id as string;
+
+  try {
+    const notifications = await prisma.notification.findMany({
+      where: {
+        OR: [
+          {
+            serviceownedId: userId, 
+          },
+          {
+            serviceownedId: null,
+            OR: [
+              { userId: userId }, 
+              { providerId: userId },
+            ],
+          },
+        ],
+      },
+      select: {
+        id: true,
+        content: true,
+        createdAt: true,
+        ticket: {
+          select: {
+            status: true,
+          },
+        },
+      },
+    });
+
+
+    return c.json(notifications);
+  } catch (error: any) {
+    console.error('Error fetching notifications: ', error);
+    return c.json({ error: 'Failed to fetch notifications', details: error.message }, 500);
   }
 });
 
@@ -707,15 +812,35 @@ serviceRouter.get('/:serviceId', async (c) => {
         id: serviceId,
       },
       select: {
-        name: true, 
+        name: true,
         description: true,
         price: true,
         timing: true,
         category: true,
-        latitude: true, 
-        longitude: true, 
-        contactNo:true,
-        rating:true
+        latitude: true,
+        longitude: true,
+        contactNo: true,
+        availability: true,
+        rating: true,
+        reviews: {
+          select: {
+            comment: true,
+            ticket: {
+              select: {
+                user: {
+                  select: {
+                    name: true,
+                  },
+                },
+                provider: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
 
