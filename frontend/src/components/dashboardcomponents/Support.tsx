@@ -6,9 +6,7 @@ export const Support = () => {
           <p>If you need any assistance, please reach out to our support team.</p>
           <p>Email: jaipie@gmail.com</p>
           <p>Phone: 1234567890</p>
-          <button className="bg-blue-600 text-white px-4 py-2 rounded mt-4">
-            Contact Support
-          </button>
+         
         </div>
       </div>
     );
