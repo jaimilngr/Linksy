@@ -34,10 +34,17 @@ commentRouter.post("/:serviceId", jwtAuthMiddleware, async (c) => {
             return c.json({ message: "Content and Service ID are required" });
         }
 
+        const provider = await prisma.serviceProvider.findUnique({
+            where: { id: userId },
+        });
+
+        const userRecord = provider ? null : await prisma.user.findUnique({
+            where: { id: userId },
+        });
 
         let comment;
 
-        if (userId) {
+        if (provider) {
             comment = await prisma.comment.create({
                 data: {
                     content: body.content,
@@ -46,7 +53,7 @@ commentRouter.post("/:serviceId", jwtAuthMiddleware, async (c) => {
                     parentId: body.parentId || null,
                 },
             });
-        } else {
+        } else if (userRecord) {
             comment = await prisma.comment.create({
                 data: {
                     content: body.content,
@@ -55,6 +62,9 @@ commentRouter.post("/:serviceId", jwtAuthMiddleware, async (c) => {
                     parentId: body.parentId || null,
                 },
             });
+        } else {
+            c.status(404);
+            return c.json({ message: "User not found" });
         }
 
         return c.json({ id: comment.id }, 201);
@@ -68,6 +78,7 @@ commentRouter.post("/:serviceId", jwtAuthMiddleware, async (c) => {
         await prisma.$disconnect();
     }
 });
+
 
 commentRouter.get("/bulk/:serviceId", async (c: any) => {
     const prisma = new PrismaClient({

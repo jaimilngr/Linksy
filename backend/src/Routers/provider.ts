@@ -475,7 +475,6 @@ serviceRouter.put('/ticket/done/:ticketId', jwtAuthMiddleware, async (c) => {
 });
 
 // management status request
-
 serviceRouter.put('/ticket/:status/:ticketId', jwtAuthMiddleware, async (c) => {
   const user = (c.req as any).user;
   const prisma = new PrismaClient({
@@ -513,56 +512,40 @@ serviceRouter.put('/ticket/:status/:ticketId', jwtAuthMiddleware, async (c) => {
       return c.json({ error: 'Invalid status parameter' }, 400);
     }
 
-     await prisma.ticket.update({
+    await prisma.ticket.update({
       where: {
         id: ticketIdNumber,
       },
       data: {
-        status: status, 
+        status: status,
       },
     });
-    const serviceName = ticket.service?.name || "the service"; 
+
+    const serviceName = ticket.service?.name || "the service";
     let notificationMessage = `Your ticket status has been ${status === 'working' ? 'accepted' : status}. for ${serviceName}.`;
 
-    if (ticket.userId) {
-      const userExists = await prisma.user.findUnique({
-        where: { id: ticket.userId },
+    const existingNotification = await prisma.notification.findUnique({
+      where: { ticketId: ticketIdNumber },
+    });
+
+    if (existingNotification) {
+      await prisma.notification.update({
+        where: { ticketId: ticketIdNumber },
+        data: {
+          content: notificationMessage,
+          serviceownedId: null,
+        },
       });
-      if (userExists) {
-        await prisma.notification.create({
-          data: {
-            userId: ticket.userId,
-            content: notificationMessage,
-            ticketId: ticketIdNumber,
-          },
-        });
-      } else {
-        return c.json({ error: `User with ID ${ticket.userId} does not exist. Notification not created.` }, 400);
-      }
-    } else if (ticket.providerId) {
-      const providerExists = await prisma.serviceProvider.findUnique({
-        where: { id: ticket.providerId },
-      });
-      if (providerExists) {
-        await prisma.notification.create({
-          data: {
-            providerId: ticket.providerId,
-            content: notificationMessage,
-            ticketId: ticketIdNumber,
-          },
-        });
-      } else {
-        return c.json({ error: `Provider with ID ${ticket.providerId} does not exist. Notification not created.` }, 400);
-      }
     }
 
-
     return c.json({ message: 'Ticket status updated successfully' }, 200);
+
   } catch (error: any) {
     console.error('Error updating ticket status: ', error);
     return c.json({ error: 'Failed to update ticket status', details: error.message }, 500);
   }
 });
+
 
 
 // Create service request 
