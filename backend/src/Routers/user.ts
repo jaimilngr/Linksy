@@ -20,6 +20,13 @@ interface Environment {
   MAILJET_API_SECRET: string;
 }
 
+interface MailjetResponse {
+  Messages: {
+    Status: string;
+    [key: string]: any; 
+  }[];
+}
+
 // Middleware for JWT authentication
 
 export const jwtAuthMiddleware = async (c: any, next: any) => {
@@ -357,8 +364,6 @@ authRouter.post("/signin", async (c) => {
   }
 });
 
-
-
 authRouter.post('/additional-data', jwtAuthMiddleware, async (c) => {
   const body = await c.req.json();
 
@@ -368,17 +373,24 @@ authRouter.post('/additional-data', jwtAuthMiddleware, async (c) => {
 
   try {
     const { address } = body;
-
     const userId = (c.req as any).user.id as string;
 
     if (!userId) {
       return c.json({ error: 'Invalid user ID from token' }, 400);
     }
-    
-    await prisma.user.update({
-      where: { id: userId },
-      data: { address: address },
-    });
+
+    try {
+      await prisma.serviceProvider.update({
+        where: { id: userId },
+        data: { address: address },
+      });
+    } catch (error) {
+      
+      await prisma.user.update({
+        where: { id: userId },
+        data: { address: address },
+      });
+    }
 
     return c.json({ success: true });
   } catch (error: any) {
@@ -387,12 +399,12 @@ authRouter.post('/additional-data', jwtAuthMiddleware, async (c) => {
   }
 });
 
-authRouter.get('/profile',jwtAuthMiddleware, async (c) => {
-  const user = (c.req as any).user;
-  const role = c.req.header('Role'); 
 
-  if (!user || !role) {
-    return c.json({ error: 'Unauthorized or role missing' }, 401);
+authRouter.get('/profile', jwtAuthMiddleware, async (c) => {
+  const user = (c.req as any).user;
+
+  if (!user) {
+    return c.json({ error: 'Unauthorized' }, 401);
   }
 
   const userId = user.id as string;
@@ -402,32 +414,31 @@ authRouter.get('/profile',jwtAuthMiddleware, async (c) => {
   }).$extends(withAccelerate());
 
   try {
-    let profile;
+    const userProfile = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, name: true, email: true, contactNo: true, address: true },
+    });
 
-    if (role === 'service') {
-      profile = await prisma.serviceProvider.findUnique({
-        where: { id: userId },
-        select: { id: true, name: true, email: true, contactNo: true }
-      });
-    } else if (role === 'user') {
-      profile = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { id: true, name: true, email: true, contactNo: true, address: true }
-      });
-    } else {
-      return c.json({ error: 'Invalid role' }, 400);
+    const serviceProfile = await prisma.serviceProvider.findUnique({
+      where: { id: userId },
+      select: { id: true, name: true, email: true, contactNo: true , address:true },
+    });
+
+    if (userProfile) {
+      return c.json(userProfile);
     }
 
-    if (!profile) {
-      return c.json({ error: 'User not found' }, 404);
+    if (serviceProfile) {
+      return c.json(serviceProfile);
     }
 
-    return c.json(profile);
+    return c.json({ error: 'User not found' }, 404);
   } catch (error: any) {
     console.error('Error fetching profile data:', error);
     return c.json({ error: 'Failed to fetch profile data', details: error.message }, 500);
   }
 });
+
 
 // Profile route (put)
 authRouter.put('/profile',jwtAuthMiddleware, async (c) => {
@@ -454,7 +465,7 @@ authRouter.put('/profile',jwtAuthMiddleware, async (c) => {
       const updatedServiceProvider = await prisma.serviceProvider.update({
         where: { id: userId },
         data: { ...body },
-        select: { id: true, name: true, email: true, contactNo: true }
+        select: { id: true, name: true, email: true, contactNo: true, address:true }
       });
 
       return c.json(updatedServiceProvider);
@@ -533,5 +544,66 @@ authRouter.put('/update-password',jwtAuthMiddleware, async (c) => {
     return c.json({ error: 'Failed to update password', details: error.message }, 500);
   }
 });
+
+
+authRouter.post('/send-email', async (c) => {
+  const body = await c.req.json();
+
+  // Check for required fields
+  if (!body.name || !body.email || !body.subject || !body.message) {
+    return c.json({ error: 'Name, email, subject, and message are required' }, 400);
+  }
+
+  const apiKey = c.env.MAILJET_API_KEY;
+  const apiSecret = c.env.MAILJET_API_SECRET;
+
+  try {
+    const response = await fetch('https://api.mailjet.com/v3.1/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${btoa(`${apiKey}:${apiSecret}`)}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        Messages: [
+          {
+            From: {
+              Email: 'linksy.info@gmail.com', // Verified sender email
+              Name: body.name || 'Anonymous', // Use name from the request body
+            },
+            To: [
+              {
+                Email: 'linksy.info@gmail.com', // Send to the same email address
+                Name: 'Linksy Support',
+              }
+            ],
+            Subject: body.subject,
+            TextPart: body.message,
+            HTMLPart: `<h3>${body.message}</h3><p>From: ${body.email}</p>`, // Include sender's email in the message
+          }
+        ]
+      })
+    });
+
+    const result:MailjetResponse = await response.json();
+    console.log(result); // Log the result for debugging
+
+    const messageStatus = result.Messages && result.Messages[0] ? result.Messages[0].Status : "unknown";
+
+    // Log the status for further clarity
+    console.log("Message Status:", messageStatus);
+
+    if (messageStatus === "success") {
+      return c.json({ message: 'Email sent successfully!' });
+    } else {
+      return c.json({ error: 'Failed to send email', details: result }, 500);
+    }
+  } catch (error) {
+    console.error('Error sending email:', error);
+    return c.json({ error: 'Internal server error' }, 500);
+  }
+});
+
+
 
 export default authRouter;

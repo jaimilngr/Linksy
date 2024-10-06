@@ -217,8 +217,8 @@ const ServiceDetails = () => {
 
   return (
     <div>
-      <Navbar />
-      <div className="container mx-auto py-6 md:py-10 px-4">
+        <Navbar/>
+        <div className="container mx-auto py-6 md:py-10 px-4">
         <button
           className="mb-4 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 dark:bg-blue-700 dark:hover:bg-blue-800"
           onClick={() => navigate(-1)}

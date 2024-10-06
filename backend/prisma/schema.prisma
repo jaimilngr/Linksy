@@ -38,6 +38,7 @@ model ServiceProvider {
   name              String
   password          String
   contactNo         String              @unique
+  address           String?             
   mode              ServiceProviderMode @default(offline)
   profileImageUrl   String?
   verified          Boolean             @default(false)

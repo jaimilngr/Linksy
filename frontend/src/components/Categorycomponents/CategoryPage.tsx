@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom"; // useNavigate added here
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Navbar } from "../Uicomponents/Navbar";
 import { BACKEND_URL } from "../../config";
 import { Footer } from "../Uicomponents/Footer";
 
-const CategoryPage = () => {
+
+const CategoryPage = ({ location }: { location: { latitude: number; longitude: number } }) => {
   const { title } = useParams<{ title: string }>();
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -14,8 +15,7 @@ const CategoryPage = () => {
 
   useEffect(() => {
     const fetchServices = async () => {
-      const latitude = localStorage.getItem("latitude");
-      const longitude = localStorage.getItem("longitude");
+      const { latitude, longitude } = location; 
 
       if (!latitude || !longitude) {
         setError("Please select your location.");
@@ -56,7 +56,7 @@ const CategoryPage = () => {
     };
 
     fetchServices();
-  }, [title]);
+  }, [title,location]);
 
   const renderStars = (rating: number) => {
     const maxStars = 5;
@@ -87,7 +87,6 @@ const CategoryPage = () => {
 
   return (
     <div>
-      <Navbar />
       <div className="container w-full mx-auto py-6 md:py-10 px-10">
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-6 md:mb-8">
           {title} Services

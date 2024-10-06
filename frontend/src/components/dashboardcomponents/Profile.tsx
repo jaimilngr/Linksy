@@ -9,7 +9,7 @@ export const Profile = () => {
     name: string;
     email: string;
     contactNo: string;
-    address?: string; 
+    address?: string; // Optional address field
   } | null>(null);
   const [loading, setLoading] = useState(true);
   const { setAuthState } = useAuth();
@@ -18,7 +18,7 @@ export const Profile = () => {
     name: string;
     email: string;
     contactNo: string;
-    address?: string;
+    address?: string; // Optional address field
   }>({
     name: '',
     email: '',
@@ -73,7 +73,7 @@ export const Profile = () => {
       setProfileData(formData);
       setAuthState({
         authUser: formData.name,
-         isLoggedIn: true,
+        isLoggedIn: true,
         role: role || null,
         token: token || null,
       });
@@ -91,6 +91,7 @@ export const Profile = () => {
       .join('');
     return initials.toUpperCase();
   };
+
   const SkeletonLoader = () => (
     <div>
       <h3 className="text-2xl font-semibold mb-6">Personal Information</h3>
@@ -128,9 +129,7 @@ export const Profile = () => {
 
   if (loading) {
     return <SkeletonLoader />;
-  } 
-
-  const isUserRole = Cookies.get('role') === 'user';
+  }
 
   return (
     <div>
@@ -185,18 +184,16 @@ export const Profile = () => {
               />
             </div>
           </div>
-          {isUserRole && (
-            <div>
-              <label className="block text-sm">Address</label>
-              <input
-                type="text"
-                name="address"
-                value={formData.address ?? ''}
-                onChange={handleInputChange}
-                className="w-full p-2 border border-gray-300 rounded bg-white dark:bg-[#384454]"
-              />
-            </div>
-          )}
+          <div>
+            <label className="block text-sm">Address</label>
+            <input
+              type="text"
+              name="address"
+              value={formData.address}
+              onChange={handleInputChange}
+              className="w-full p-2 border border-gray-300 rounded bg-white dark:bg-[#384454]"
+            />
+          </div>
           <button
             onClick={handleSave}
             className="bg-blue-600 text-white px-4 py-2 rounded"
@@ -237,17 +234,15 @@ export const Profile = () => {
               />
             </div>
           </div>
-          {isUserRole && (
-            <div>
-              <label className="block text-sm">Address</label>
-              <input
-                type="text"
-                value={profileData?.address ?? 'No Address'}
-                readOnly
-                className="w-full p-2 border border-gray-300 rounded bg-gray-200 dark:bg-gray-700"
-              />
-            </div>
-          )}
+          <div>
+            <label className="block text-sm">Address</label>
+            <input
+              type="text"
+              value={profileData?.address ?? 'No Address'}
+              readOnly
+              className="w-full p-2 border border-gray-300 rounded bg-gray-200 dark:bg-gray-700"
+            />
+          </div>
         </div>
       )}
     </div>

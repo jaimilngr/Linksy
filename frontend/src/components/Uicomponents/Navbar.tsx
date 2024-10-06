@@ -3,12 +3,23 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import "../../index.css";
 import { Mode } from "./Mode";
 import { useAuth } from "../../Context/Authcontext";
+import { Modal } from "./Modal";
+import LocationMap from "./LocationMap";
 
-export const Navbar = () => {
+interface NavbarProps {
+  onUpdateLocation?: (lat: number, lng: number) => void; 
+}
+
+export const Navbar = ({onUpdateLocation}: NavbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [showNavbar, setShowNavbar] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [position, setPosition] = useState<{ lat: number; lng: number }>({
+    lat: 51.505, 
+    lng: -0.09, 
+  });
   const navigate = useNavigate();
   const location = useLocation();
   const authContext = useAuth();
@@ -33,26 +44,43 @@ export const Navbar = () => {
     }
   };
   
+
   const handleLocationUpdate = () => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const latitude = position.coords.latitude;
-          const longitude = position.coords.longitude;
-
-          localStorage.setItem("latitude", latitude.toString());
-          localStorage.setItem("longitude", longitude.toString());
-
-          window.location.reload();
+          setPosition({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+          setIsModalOpen(true);
         },
         (error) => {
-          console.error("Error getting location:", error.message);
+          console.error("Error fetching location:", error);
         }
       );
     } else {
       console.error("Geolocation is not supported by this browser.");
     }
   };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+  };
+
+  const handlePositionChange = (latLng: { lat: number; lng: number }) => {
+    setPosition(latLng);
+  };
+
+ 
+  const handleConfirmPosition = () => {
+    localStorage.setItem("latitude", position.lat.toString());
+    localStorage.setItem("longitude", position.lng.toString());
+    handleCloseModal(); 
+    if (onUpdateLocation) {
+      onUpdateLocation(position.lat, position.lng);
+    }
+    };
 
   const navItems = [
     { to: "", label: "Services", internal: true, current: true },
@@ -61,21 +89,26 @@ export const Navbar = () => {
     { to: "faq", label: "FAQ", internal: true },
   ];
 
+  const scrollThreshold = 100;
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > lastScrollY) {
+      const currentScrollY = window.scrollY;
+      if (currentScrollY > lastScrollY && currentScrollY > scrollThreshold) {
         setShowNavbar(false);
         setIsDropdownOpen(false);
-      } else {
+      } else if (currentScrollY < lastScrollY && currentScrollY > scrollThreshold) {
+        setShowNavbar(true);
+      } else if (currentScrollY <= scrollThreshold) {
         setShowNavbar(true);
       }
-      setLastScrollY(window.scrollY);
+      setLastScrollY(currentScrollY);
     };
 
     window.addEventListener("scroll", handleScroll);
 
     return () => window.removeEventListener("scroll", handleScroll);
   }, [lastScrollY]);
+
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -243,7 +276,7 @@ export const Navbar = () => {
             isOpen ? "block" : "hidden"
           }`}
         >
-                   <ul className="flex flex-col text-xl p-4 md:p-0 bg-background text-right font-light rounded-lg md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0 dark:bg-background z-50">
+                   <ul className="flex flex-col text-xl p-4 md:p-0 bg-background text-right font-light md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0 dark:bg-background z-50 border-t-2 border-gray-50">
 
             {navItems.map((item) => (
               <li key={item.label} className="relative group">
@@ -264,6 +297,26 @@ export const Navbar = () => {
           </ul>
         </div>
       </div>
+
+      <Modal isOpen={isModalOpen} onClose={handleCloseModal}>
+  <h1 className="text-2xl font-bold text-center mb-4">Select Your Location</h1>
+  <div className="w-full max-w-md h-80 rounded-lg overflow-hidden shadow-lg border border-gray-300 mx-auto">
+    <LocationMap
+      position={position}
+      onPositionChange={handlePositionChange}
+    />
+  </div>
+  <div className="mt-4 flex justify-center">
+    <button
+      onClick={handleConfirmPosition}
+      className="bg-blue-500 text-white px-6 py-2 w-full rounded hover:bg-blue-600 transition duration-300"
+    >
+      Confirm Location
+    </button>
+  </div>
+</Modal>
+
+      
     </nav>
   );
 };

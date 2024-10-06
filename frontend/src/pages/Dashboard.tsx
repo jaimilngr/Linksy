@@ -64,7 +64,7 @@ const Dashboard = () => {
                 onClick={() => setSelectedSection(section)}
                 className={`text-left py-2 px-4 rounded-lg transition-colors ${
                   selectedSection === section
-                    ? "bg-secondary dark:bg-gray-700"
+                    ? "bg-[#c8cfdc] dark:bg-gray-700"
                     : "bg-background hover:bg-secondary dark:hover:bg-gray-700"
                 }`}
               >

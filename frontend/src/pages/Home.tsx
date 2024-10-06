@@ -25,33 +25,30 @@ export const Home = () => {
   const AdditionalData = async (data: any) => {
     try {
       const token = Cookies.get('token');
-      const role = Cookies.get('role');
-      
+
       const payload = {
         ...data,
       };
-      
-      if(role == 'user'){
+
       await axios.post(`${BACKEND_URL}/api/v1/user/additional-data`, payload, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      
-    }
-   
-      localStorage.removeItem('needsAdditionalData'); 
+
+      localStorage.removeItem('needsAdditionalData');
       setShowModal(false);
     } catch (error) {
       console.error("Failed to submit additional data:", error);
     }
   };
 
-
   return (
-    <div >
-      <div>
-      {showModal && <Add_Data onSubmit={AdditionalData} />}
-      </div>
-      <Navbar />
+    <div>
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center">
+          <Add_Data onSubmit={AdditionalData} />
+        </div>
+      )}
+      <Navbar  />
       <Hero />
       <Cards />
       <div id="process">
@@ -64,7 +61,7 @@ export const Home = () => {
       <div id="faq">
         <Faq />
       </div>
-      <Footer/>
+      <Footer />
     </div>
   );
 };

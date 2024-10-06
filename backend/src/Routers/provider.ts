@@ -687,6 +687,7 @@ serviceRouter.get('/schedule',jwtAuthMiddleware, async (c) => {
         provider: {
           select: {
             name: true,
+            address:true,
             contactNo: true,
           }
         }
