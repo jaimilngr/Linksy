@@ -39,7 +39,7 @@ const ResetPassword: React.FC = () => {
     try {
       await axios.post(`${BACKEND_URL}/api/v1/user/reset-password`, {
         token: token,
-        password: newPassword,
+        newPassword: newPassword,
       });
 
       setSuccessMessage("Password successfully reset! Redirecting to login...");
