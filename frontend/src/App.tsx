@@ -7,6 +7,7 @@ import VerifyEmail from "./components/Authcomponents/VerifyEmail";
 import ServiceDetails from "./components/servicecomponents/ServiceDetails";
 import Updates from "./pages/Updates";
 import Categories from "./pages/Categories";
+import ResetPassword from "./components/Authcomponents/ResetPassword";
 
 function App() {
   return (
@@ -21,6 +22,8 @@ function App() {
             <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/service/:id" element={<ServiceDetails  />} />
             <Route path="/updates" element={<Updates />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+
           </Routes>
         </BrowserRouter>
       </AuthProvider>

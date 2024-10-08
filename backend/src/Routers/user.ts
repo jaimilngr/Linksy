@@ -98,6 +98,47 @@ const sendVerificationEmail = async (c:any,email: string, name: string, verifica
   }
 };
 
+// password reset mail 
+const sendPasswordResetEmail = async (c: any, email: string, resetLink: string) => {
+  const apiKey = c.env.MAILJET_API_KEY;
+  const apiSecret = c.env.MAILJET_API_SECRET;
+
+  try {
+    const response = await fetch('https://api.mailjet.com/v3.1/send', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${btoa(`${apiKey}:${apiSecret}`)}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        Messages: [
+          {
+            From: {
+              Email: 'linksy.info@gmail.com',
+              Name: 'Linksy'
+            },
+            To: [
+              {
+                Email: email,
+              }
+            ],
+            TemplateID: 6364338,
+            TemplateLanguage: true,
+            Variables: {
+              resetLink: resetLink
+            }
+          }
+        ]
+      })
+    });
+
+    const result = await response.json();
+    console.log(result);
+  } catch (error) {
+    console.error('Error sending reset email:', error);
+  }
+};
+
 
 // Sign-up route
 authRouter.post("/signup", async (c) => {
@@ -182,7 +223,7 @@ authRouter.post("/signup", async (c) => {
           password: body.password,
           verificationToken,
           tokenExpiresAt,
-          verified: false, // initially not verified
+          verified: false, 
         }
       });
     }
@@ -195,7 +236,7 @@ authRouter.post("/signup", async (c) => {
     );
 
     return c.json({
-      message: 'Signup successful, please check your email for a verification link.',
+      message: 'Signup successful! Please check your inbox or spam folder for the verification link.',
     });
 
   } catch (e) {
@@ -290,8 +331,7 @@ authRouter.post('/verify-email', async (c) => {
 
 
 
-
-// Sign-in route
+// Sign-in route 
 authRouter.post("/signin", async (c) => {
   const body = await c.req.json();
 
@@ -316,12 +356,23 @@ authRouter.post("/signin", async (c) => {
       },
       select: {
         id: true,
-        name: true
+        name: true,
+        verificationToken: true,  
+        tokenExpiresAt: true      
       }
     });
 
     if (user) {
       role = "user";
+      if (user.verificationToken || (user.tokenExpiresAt && user.tokenExpiresAt < new Date())) {
+        const verificationLink = `${c.env.FRONTEND_URL}/verify-email?token=${user.verificationToken}`;
+        await sendVerificationEmail(c, body.email, user.name, verificationLink); 
+
+        c.status(403);
+        return c.json({
+          error: "Your email is not verified. A new verification email has been sent. Please check your email."
+        });
+      }
     } else {
       user = await prisma.serviceProvider.findUnique({
         where: {
@@ -330,15 +381,27 @@ authRouter.post("/signin", async (c) => {
         },
         select: {
           id: true,
-          name: true
+          name: true,
+          verificationToken: true,  
+          tokenExpiresAt: true      
         }
       });
 
       if (user) {
         role = "service";
+        if (user.verificationToken || (user.tokenExpiresAt && user.tokenExpiresAt < new Date())) {
+          const verificationLink = `${c.env.FRONTEND_URL}/verify-email?token=${user.verificationToken}`;
+          await sendVerificationEmail(c, body.email, user.name,verificationLink); 
+
+          c.status(403);
+          return c.json({
+            error: "Your email is not verified. A new verification email has been sent. Please check your email."
+          });
+        }
       }
     }
 
+    // If user not found in either table
     if (!user) {
       c.status(403);
       return c.json({
@@ -364,6 +427,109 @@ authRouter.post("/signin", async (c) => {
   }
 });
 
+// password reset  request
+
+authRouter.post('/request-password-reset', async (c) => {
+  const { email } = await c.req.json();
+  
+  if (!email) {
+    return c.json({ error: 'Email is required' }, 400);
+  }
+
+  const prisma = new PrismaClient({
+    datasourceUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+
+  try {
+    const user = await prisma.user.findUnique({ where: { email } });
+    const serviceProvider = await prisma.serviceProvider.findUnique({ where: { email } });
+
+    if (!user && !serviceProvider) {
+      return c.json({ error: 'No user found with this email' }, 404);
+    }
+
+    const resetPasswordToken = await generateRandomToken(32);
+    const resetTokenExpiresAt = new Date();
+    resetTokenExpiresAt.setHours(resetTokenExpiresAt.getHours() + 1);
+
+    if (user) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { resetPasswordToken, resetTokenExpiresAt }
+      });
+    } else if (serviceProvider) {
+      await prisma.serviceProvider.update({
+        where: { id: serviceProvider.id },
+        data: { resetPasswordToken, resetTokenExpiresAt }
+      });
+    }
+
+    const resetLink = `${c.env.FRONTEND_URL}/reset-password?token=${resetPasswordToken}`;
+    await sendPasswordResetEmail(c, email, resetLink);
+
+    return c.json({ message: 'Password reset link has been sent to your email.' });
+  } catch (e) {
+    console.error('Error processing password reset request:', e);
+    return c.json({ error: 'Internal server error' }, 500);
+  }
+});
+
+// passowrd reset 
+authRouter.post('/reset-password', async (c) => {
+  const { token, newPassword } = await c.req.json();
+
+  if (!token || !newPassword) {
+    return c.json({ error: 'Token and new password are required' }, 400);
+  }
+
+  const prisma = new PrismaClient({
+    datasourceUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+
+  try {
+    const user = await prisma.user.findFirst({ where: { resetPasswordToken: token } });
+    const serviceProvider = await prisma.serviceProvider.findFirst({ where: { resetPasswordToken: token } });
+
+    if (!user && !serviceProvider) {
+      return c.json({ error: 'Invalid or expired token' }, 400);
+    }
+
+    if (user) {
+      if (user.resetTokenExpiresAt && user.resetTokenExpiresAt < new Date()) {
+        return c.json({ error: 'Token has expired' }, 400);
+      }
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          password: newPassword,
+          resetPasswordToken: null,
+          resetTokenExpiresAt: null
+        }
+      });
+    } else if (serviceProvider) {
+      if (serviceProvider.resetTokenExpiresAt && serviceProvider.resetTokenExpiresAt < new Date()) {
+        return c.json({ error: 'Token has expired' }, 400);
+      }
+
+      await prisma.serviceProvider.update({
+        where: { id: serviceProvider.id },
+        data: {
+          password: newPassword,
+          resetPasswordToken: null,
+          resetTokenExpiresAt: null
+        }
+      });
+    }
+
+    return c.json({ message: 'Password reset successful. You can now log in.' });
+  } catch (e) {
+    console.error('Error resetting password:', e);
+    return c.json({ error: 'Internal server error' }, 500);
+  }
+});
+
+// additional-data
 authRouter.post('/additional-data', jwtAuthMiddleware, async (c) => {
   const body = await c.req.json();
 

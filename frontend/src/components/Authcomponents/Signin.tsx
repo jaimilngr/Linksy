@@ -6,6 +6,7 @@ import { BACKEND_URL } from "../../config";
 import Cookies from "js-cookie";
 import { useAuth } from "../../Context/Authcontext";
 import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
+import ForgotPasswordModal from "./ForgotPasswordModal";
 
 interface SignInProps {
   handleGoBack: () => void;
@@ -22,6 +23,8 @@ const SignIn: React.FC<SignInProps> = ({ handleGoBack }) => {
   const [passwordError, setPasswordError] = useState<string>("");
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
+
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false); // State for modal
 
   const validateEmail = (email: string) => {
     if (!email) {
@@ -111,7 +114,7 @@ const SignIn: React.FC<SignInProps> = ({ handleGoBack }) => {
         Welcome Back
       </p>
       <form
-        className="flex flex-col gap-4 w-full max-w-md px-10"
+        className="flex flex-col  w-full max-w-md px-10"
         onSubmit={handleSubmit}
       >
         <div>
@@ -128,7 +131,7 @@ const SignIn: React.FC<SignInProps> = ({ handleGoBack }) => {
           {emailError && <p className="text-red-500 text-sm mt-2">{emailError}</p>}
         </div>
 
-        <div className="relative">
+        <div className="relative mt-4">
           <input
             type={showPassword ? "text" : "password"}
             placeholder="Password"
@@ -151,8 +154,9 @@ const SignIn: React.FC<SignInProps> = ({ handleGoBack }) => {
             )}
           </button>
         </div>
-        {passwordError && <p className="text-red-500 text-sm">{passwordError}</p>}
-        {generalError && <p className="text-red-500">{generalError}</p>}
+
+        {passwordError && <p className="text-red-500 text-sm text-center mt-1">{passwordError}</p>}
+        {generalError && <p className="text-red-500 text-center mt-1">{generalError}</p>}
         {Object.values(errors).length > 0 && (
           <div className="text-red-500">
             {Object.values(errors).map((error, index) => (
@@ -164,7 +168,7 @@ const SignIn: React.FC<SignInProps> = ({ handleGoBack }) => {
         <button
           type="submit"
           disabled={loading}
-          className="relative inline-flex items-center justify-center p-2 text-white bg-blue-600 border border-blue-700 hover:bg-blue-700 focus:ring-4 focus:ring-blue-500 font-medium rounded-full text-sm px-5 py-2.5"
+          className="relative inline-flex items-center justify-center p-2 text-white bg-blue-600 border border-blue-700 hover:bg-blue-700 focus:ring-4 focus:ring-blue-500 font-medium rounded-full text-sm px-5 py-2.5 mt-4"
         >
           {loading ? (
             <div className="sliding-bars absolute inset-0">
@@ -177,6 +181,10 @@ const SignIn: React.FC<SignInProps> = ({ handleGoBack }) => {
           )}
         </button>
       </form>
+      <div className=" text-blue-400 cursor-pointer mt-2 hover:text-white" onClick={() => setIsModalOpen(true)}>
+          Forgot Your Password?
+        </div>
+      <ForgotPasswordModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </motion.div>
   );
 };

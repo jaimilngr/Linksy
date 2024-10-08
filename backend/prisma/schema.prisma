@@ -19,6 +19,8 @@ model User {
   verified          Boolean        @default(false)
   verificationToken String?
   tokenExpiresAt    DateTime?
+  resetPasswordToken     String?      
+  resetTokenExpiresAt    DateTime? 
   notifications     Notification[]
   comments          Comment[]
   reviews           Review[] 
@@ -44,6 +46,8 @@ model ServiceProvider {
   verified          Boolean             @default(false)
   verificationToken String?
   tokenExpiresAt    DateTime?
+  resetPasswordToken     String?            
+  resetTokenExpiresAt    DateTime?  
   services          Service[]           @relation("ProviderServices")
   comments          Comment[]
   reviews           Review[] 

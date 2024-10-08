@@ -148,9 +148,11 @@ const SignUp: React.FC<SignUpProps> = ({ handleGoBack }) => {
       setSelectedRole(null);
     } catch (error: any) {
       if (error.response) {
-        const { errors, error: serverError } = error.response.data;
+        const { fields, error: serverError } = error.response.data;
 
-        if (errors) {
+        if (fields) {
+          if (fields.email) errors.email = "email already in use";
+          if (fields.contactNo) errors.contactNo = "contact number already in use.";
           setErrors(errors);
         } else if (serverError) {
           setGeneralError(serverError);
