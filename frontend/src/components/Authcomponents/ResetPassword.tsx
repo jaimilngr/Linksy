@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'; 
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { BACKEND_URL } from "../../config";
-import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline"; // Import Heroicons
+import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline"; 
 
 const ResetPassword: React.FC = () => {
   const [newPassword, setNewPassword] = useState<string>('');
@@ -11,8 +11,8 @@ const ResetPassword: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [showNewPassword, setShowNewPassword] = useState<boolean>(false); // Toggle state for new password visibility
-  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false); // Toggle state for confirm password visibility
+  const [showNewPassword, setShowNewPassword] = useState<boolean>(false); 
+  const [showConfirmPassword, setShowConfirmPassword] = useState<boolean>(false); 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
@@ -20,6 +20,9 @@ const ResetPassword: React.FC = () => {
   const validatePasswords = () => {
     if (!newPassword || !confirmPassword) {
       return "Both fields are required";
+    }
+    if (newPassword.length < 6) {
+      return "Password must be at least 6 characters long";
     }
     if (newPassword !== confirmPassword) {
       return "Passwords do not match";
@@ -55,7 +58,7 @@ const ResetPassword: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-[#181424] bg-opacity-95  ">
+    <div className="fixed inset-0 flex items-center justify-center bg-[#181424] bg-opacity-95">
       <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md m-10">
         <h2 className="text-xl font-bold mb-4">Reset Password</h2>
         {successMessage ? (
@@ -111,7 +114,6 @@ const ResetPassword: React.FC = () => {
               </button>
             </div>
 
-            {/* Error Messages */}
             {passwordError && <p className="text-red-500">{passwordError}</p>}
             {errorMessage && <p className="text-red-500">{errorMessage}</p>}
 
