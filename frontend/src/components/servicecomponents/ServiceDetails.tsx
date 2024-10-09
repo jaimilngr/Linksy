@@ -74,7 +74,7 @@ const ServiceDetails = () => {
 
       setDate("");
       setTime("");
-      setSuccessMessage("Service request sent successfully!");
+      setSuccessMessage("Service request sent successfully! You will be notified within 2 hours.");
       setTimeout(() => {
         setSuccessMessage(null);
       }, 10000);

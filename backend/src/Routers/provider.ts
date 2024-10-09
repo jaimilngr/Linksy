@@ -1,13 +1,12 @@
-import { Hono } from 'hono';
-import { PrismaClient } from '@prisma/client/edge';
-import { withAccelerate } from '@prisma/extension-accelerate';
-import { jwtAuthMiddleware } from './user'; 
-import { Status } from 'cloudinary';
+import { Hono } from "hono";
+import { PrismaClient } from "@prisma/client/edge";
+import { withAccelerate } from "@prisma/extension-accelerate";
+import { jwtAuthMiddleware } from "./user";
 
 export const serviceRouter = new Hono<{
   Bindings: {
     DATABASE_URL: string;
-  }
+  };
 }>();
 
 interface ServiceCreateBody {
@@ -35,14 +34,14 @@ interface CreateServiceReqBody {
   role: string;
 }
 
-serviceRouter.use('/create', jwtAuthMiddleware);
-serviceRouter.use('/myservices', jwtAuthMiddleware);
-serviceRouter.use('/update/:serviceid', jwtAuthMiddleware);
-serviceRouter.use('/delete/:serviceid', jwtAuthMiddleware);
-serviceRouter.use('/createreq/:serviceid', jwtAuthMiddleware);
-serviceRouter.use('/ticket', jwtAuthMiddleware);
+serviceRouter.use("/create", jwtAuthMiddleware);
+serviceRouter.use("/myservices", jwtAuthMiddleware);
+serviceRouter.use("/update/:serviceid", jwtAuthMiddleware);
+serviceRouter.use("/delete/:serviceid", jwtAuthMiddleware);
+serviceRouter.use("/createreq/:serviceid", jwtAuthMiddleware);
+serviceRouter.use("/ticket", jwtAuthMiddleware);
 
-serviceRouter.post('/create', async (c) => {
+serviceRouter.post("/create", async (c) => {
   const user = (c.req as any).user;
   const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,
@@ -56,17 +55,40 @@ serviceRouter.post('/create', async (c) => {
     });
 
     if (!serviceProvider) {
-      return c.json({ error: 'Service provider not found' }, 404);
+      return c.json({ error: "Service provider not found" }, 404);
+    }
+
+    if (
+      serviceProvider.suspendedUntilForReject &&
+      new Date() < new Date(serviceProvider.suspendedUntilForReject)
+    ) {
+      return c.json(
+        { error: "Service provider is suspended. Cannot create services." },
+        403
+      );
     }
 
     const body: ServiceCreateBody = await c.req.json();
 
-    if (!body.serviceType || !body.name || !body.price || !body.timing || !body.category || !body.contactNo || !body.lat || !body.lng) {
-      return c.json({ error: 'Missing required fields' }, 400);
+    if (
+      !body.serviceType ||
+      !body.name ||
+      !body.price ||
+      !body.timing ||
+      !body.category ||
+      !body.contactNo ||
+      !body.lat ||
+      !body.lng
+    ) {
+      return c.json({ error: "Missing required fields" }, 400);
     }
 
-    if (typeof body.price !== 'number' || typeof body.lat !== 'number' || typeof body.lng !== 'number') {
-      return c.json({ error: 'Invalid data types' }, 400);
+    if (
+      typeof body.price !== "number" ||
+      typeof body.lat !== "number" ||
+      typeof body.lng !== "number"
+    ) {
+      return c.json({ error: "Invalid data types" }, 400);
     }
 
     const service = await prisma.service.create({
@@ -87,12 +109,15 @@ serviceRouter.post('/create', async (c) => {
 
     return c.json(service);
   } catch (error: any) {
-    console.error('Error creating service:', error);
-    return c.json({ error: 'Failed to create service', details: error.message }, 500);
+    console.error("Error creating service:", error);
+    return c.json(
+      { error: "Failed to create service", details: error.message },
+      500
+    );
   }
 });
 
-serviceRouter.get('/myservices', async (c) => {
+serviceRouter.get("/myservices", async (c) => {
   const user = (c.req as any).user;
   const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,
@@ -111,17 +136,22 @@ serviceRouter.get('/myservices', async (c) => {
     });
 
     if (services.length === 0) {
-      return c.json({ message: "You don't have any services. Create one now!" });
+      return c.json({
+        message: "You don't have any services. Create one now!",
+      });
     }
 
     return c.json(services);
   } catch (error: any) {
-    console.error('Error fetching services:', error);
-    return c.json({ error: 'Failed to fetch services', details: error.message }, 500);
+    console.error("Error fetching services:", error);
+    return c.json(
+      { error: "Failed to fetch services", details: error.message },
+      500
+    );
   }
 });
 
-serviceRouter.put('/update/:serviceid', async (c) => {
+serviceRouter.put("/update/:serviceid", async (c) => {
   const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());
@@ -132,7 +162,7 @@ serviceRouter.put('/update/:serviceid', async (c) => {
     const body: Partial<ServiceCreateBody> = await c.req.json();
 
     if (!serviceid) {
-      return c.json({ error: 'Service ID is required' }, 400);
+      return c.json({ error: "Service ID is required" }, 400);
     }
 
     const existingService = await prisma.service.findUnique({
@@ -140,11 +170,29 @@ serviceRouter.put('/update/:serviceid', async (c) => {
     });
 
     if (!existingService) {
-      return c.json({ error: 'Service not found' }, 404);
+      return c.json({ error: "Service not found" }, 404);
+    }
+
+    const serviceProvider = await prisma.serviceProvider.findUnique({
+      where: { id: existingService.providerId },
+    });
+
+    if (!serviceProvider) {
+      return c.json({ error: "Service provider not found" }, 404);
+    }
+
+    if (
+      serviceProvider.suspendedUntilForReject &&
+      new Date() < new Date(serviceProvider.suspendedUntilForReject)
+    ) {
+      return c.json(
+        { error: "Service provider is suspended. Cannot update services." },
+        403
+      );
     }
 
     if (existingService.providerId !== user.id) {
-      return c.json({ error: 'Unauthorized' }, 403);
+      return c.json({ error: "Unauthorized" }, 403);
     }
 
     const updatedService = await prisma.service.update({
@@ -165,12 +213,15 @@ serviceRouter.put('/update/:serviceid', async (c) => {
 
     return c.json(updatedService);
   } catch (error: any) {
-    console.error('Error updating service:', error);
-    return c.json({ error: 'Failed to update service', details: error.message }, 500);
+    console.error("Error updating service:", error);
+    return c.json(
+      { error: "Failed to update service", details: error.message },
+      500
+    );
   }
 });
 
-serviceRouter.delete('/delete/:serviceid', async (c) => {
+serviceRouter.delete("/delete/:serviceid", async (c) => {
   const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());
@@ -186,11 +237,11 @@ serviceRouter.delete('/delete/:serviceid', async (c) => {
     });
 
     if (!existingService) {
-      return c.json({ error: 'Service not found' }, 404);
+      return c.json({ error: "Service not found" }, 404);
     }
 
     if (existingService.providerId !== user.id) {
-      return c.json({ error: 'Unauthorized' }, 403);
+      return c.json({ error: "Unauthorized" }, 403);
     }
 
     await prisma.service.delete({
@@ -199,37 +250,39 @@ serviceRouter.delete('/delete/:serviceid', async (c) => {
       },
     });
 
-    return c.json({ message: 'Service deleted successfully' }, 200);
-
+    return c.json({ message: "Service deleted successfully" }, 200);
   } catch (error: any) {
-    console.error('Error deleting service:', error);
-    return c.json({ error: 'Failed to delete service', details: error.message }, 500);
+    console.error("Error deleting service:", error);
+    return c.json(
+      { error: "Failed to delete service", details: error.message },
+      500
+    );
   }
 });
 
-serviceRouter.get('/closest', async (c) => {
+serviceRouter.get("/closest", async (c) => {
   const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());
 
   try {
-    const latitudeQuery = c.req.query('latitude');
-    const longitudeQuery = c.req.query('longitude');
-    const category = c.req.query('category');
+    const latitudeQuery = c.req.query("latitude");
+    const longitudeQuery = c.req.query("longitude");
+    const category = c.req.query("category");
 
     if (!latitudeQuery || !longitudeQuery || !category) {
-      return c.json({ error: 'Missing parameters' }, 400);
+      return c.json({ error: "Missing parameters" }, 400);
     }
 
     const latitude = parseFloat(latitudeQuery);
     const longitude = parseFloat(longitudeQuery);
 
     if (isNaN(latitude) || isNaN(longitude)) {
-      return c.json({ error: 'Invalid latitude or longitude' }, 400);
+      return c.json({ error: "Invalid latitude or longitude" }, 400);
     }
 
-    if (typeof category !== 'string') {
-      return c.json({ error: 'Invalid category' }, 400);
+    if (typeof category !== "string") {
+      return c.json({ error: "Invalid category" }, 400);
     }
 
     const services = await prisma.service.findMany({
@@ -241,31 +294,45 @@ serviceRouter.get('/closest', async (c) => {
         providerId: true,
         name: true,
         description: true,
-        reviewCount:true,
+        reviewCount: true,
         price: true,
         timing: true,
         contactNo: true,
-        latitude: true, 
-        longitude: true, 
-        rating:true,
+        latitude: true,
+        longitude: true,
+        rating: true,
       },
     });
 
     if (services.length === 0) {
       return c.json([], 200);
     }
-    
-    const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
-      const R = 6371; 
+
+    const calculateDistance = (
+      lat1: number,
+      lng1: number,
+      lat2: number,
+      lng2: number
+    ) => {
+      const R = 6371;
       const dLat = (lat2 - lat1) * (Math.PI / 180);
       const dLng = (lng2 - lng1) * (Math.PI / 180);
-      const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLng / 2) ** 2;
+      const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(lat1 * (Math.PI / 180)) *
+          Math.cos(lat2 * (Math.PI / 180)) *
+          Math.sin(dLng / 2) ** 2;
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
       return R * c;
     };
 
-    const servicesWithDistance = services.map(service => {
-      const distance = calculateDistance(latitude, longitude, service.latitude, service.longitude);
+    const servicesWithDistance = services.map((service) => {
+      const distance = calculateDistance(
+        latitude,
+        longitude,
+        service.latitude,
+        service.longitude
+      );
       return { ...service, distance };
     });
 
@@ -273,19 +340,21 @@ serviceRouter.get('/closest', async (c) => {
 
     return c.json(servicesWithDistance, {
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
   } catch (error: any) {
-    console.error('Error retrieving closest services:', error);
-    return c.json({ error: 'Failed to retrieve closest services', details: error.message }, 500);
+    console.error("Error retrieving closest services:", error);
+    return c.json(
+      { error: "Failed to retrieve closest services", details: error.message },
+      500
+    );
   }
 });
 
+// fetch service request tickets
 
-// fetch service request tickets 
-
-serviceRouter.get('/ticket', async (c) => {
+serviceRouter.get("/ticket", async (c) => {
   const user = (c.req as any).user;
   const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,
@@ -296,112 +365,43 @@ serviceRouter.get('/ticket', async (c) => {
   try {
     const servicereq = await prisma.ticket.findMany({
       where: {
-        OR: [
-          { userId: userId },    
-          { providerId: userId } ,
-        ]
+        OR: [{ userId: userId }, { providerId: userId }],
       },
       select: {
         id: true,
-        serviceId: true,         
-        time: true,              
-        date: true,              
-        status: true,            
+        serviceId: true,
+        time: true,
+        date: true,
+        status: true,
         service: {
           select: {
-            name: true,           
-          }
-        }
+            name: true,
+          },
+        },
       },
     });
 
-  
     return c.json(servicereq);
   } catch (error: any) {
-    console.error('Error fetching service requests: ', error);
-    return c.json({ error: 'Failed to fetch service requests', details: error.message }, 500);
+    console.error("Error fetching service requests: ", error);
+    return c.json(
+      { error: "Failed to fetch service requests", details: error.message },
+      500
+    );
   }
 });
 
-// cancel request 
+// cancel request
 
-serviceRouter.put('/ticket/cancel/:ticketId', jwtAuthMiddleware, async (c) => {
+serviceRouter.put("/ticket/cancel/:ticketId", jwtAuthMiddleware, async (c) => {
   const user = (c.req as any).user;
   const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());
 
   const userId = user.id as string;
-  const ticketId = c.req.param('ticketId'); 
-  const { reason } = await c.req.json(); 
-
-
-
-  try {
-    const ticketIdNumber = parseInt(ticketId as string, 10);
-
-    const ticket = await prisma.ticket.findUnique({
-      where: {
-        id: ticketIdNumber,
-      },
-      include: {
-        user: true,    
-        provider: true,
-        serviceOwner:true,
-      },
-    });
-
-    if (!ticket) {
-      return c.json({ error: 'Ticket not found' }, 404);
-    }
-
-    if (ticket.userId !== userId && ticket.providerId !== userId) {
-      return c.json({ error: 'Unauthorized action' }, 403);
-    }
-
-     await prisma.ticket.update({
-      where: {
-        id: ticketIdNumber,
-      },
-      data: {
-        status: 'cancel',  
-        cancellationReason: reason || 'No reason provided', 
-      },
-    });
-
-
-     const notificationContent = `Ticket has been canceled. Reason: ${reason || 'No reason provided'}.`;
-     await prisma.notification.update({
-      where: {
-        ticketId: ticketIdNumber,
-      },
-       data: {
-         content: notificationContent,
-         userId: ticket.userId || null, 
-         providerId: ticket.providerId || null, 
-         serviceownedId: ticket.serviceownedId,
-       },
-     });
-
-
-    return c.json({ message : "ticket marked as cancelled "} , 200);  
-  } catch (error: any) {
-    console.error('Error canceling the ticket: ', error);
-    return c.json({ error: 'Failed to cancel the ticket', details: error.message }, 500);
-  }
-});
-
-
-// done request 
-serviceRouter.put('/ticket/done/:ticketId', jwtAuthMiddleware, async (c) => {
-  const user = (c.req as any).user;
-  const prisma = new PrismaClient({
-    datasourceUrl: c.env.DATABASE_URL,
-  }).$extends(withAccelerate());
-
-  const userId = user.id as string;
-  const ticketId = c.req.param('ticketId');
-  const { rating, comment } = await c.req.json(); 
+  const ticketId = c.req.param("ticketId");
+  const { reason } = await c.req.json();
 
   try {
     const ticketIdNumber = parseInt(ticketId as string, 10);
@@ -413,25 +413,210 @@ serviceRouter.put('/ticket/done/:ticketId', jwtAuthMiddleware, async (c) => {
       include: {
         user: true,
         provider: true,
-        service: true,  
+        serviceOwner: true,
       },
     });
 
     if (!ticket) {
-      return c.json({ error: 'Ticket not found' }, 404);
+      return c.json({ error: "Ticket not found" }, 404);
     }
 
     if (ticket.userId !== userId && ticket.providerId !== userId) {
-      return c.json({ error: 'Unauthorized action' }, 403);
+      return c.json({ error: "Unauthorized action" }, 403);
+    }
+
+    // Check if the user is suspended
+    const userSuspended = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { suspendedUntil: true }, 
+    });
+
+    const currentTime = new Date();
+    if (userSuspended?.suspendedUntil && userSuspended.suspendedUntil > currentTime) {
+      return c.json({ error: "Your account is suspended for Excessive cancel request. " }, 403);
+    }
+
+    // Check if the user is suspended
+    const providerSuspended = await prisma.serviceProvider.findUnique({
+      where: { id: userId },
+      select: { suspendedUntilForCancel: true }, 
+    });
+
+    if (providerSuspended?.suspendedUntilForCancel && providerSuspended.suspendedUntilForCancel > currentTime) {
+      return c.json({ error: "Your account is suspended for Excessive cancel request." }, 403);
+    }
+
+
+    const cancellationsCount = await prisma.ticket.count({
+      where: {
+        OR: [
+          {
+            userId: userId,
+          },
+          {
+            providerId: userId,
+          },
+        ],
+        status: "cancel",
+        createdAt: {
+          gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        },
+      },
+    });
+
+   
+
+    const cancelLimit = 2;
+
+      // Check if cancellation limit is reached
+      if (cancellationsCount >= cancelLimit) {
+        // Set suspension duration (e.g., 24 hours)
+        const suspendedUntil = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  
+        // Update suspension status for the user or provider
+        if (ticket.userId === userId) {
+          await prisma.user.update({
+            where: { id: userId },
+            data: {
+              suspendedUntil: suspendedUntil, 
+            },
+          });
+  
+          // Expire all pending tickets for this user
+          await prisma.ticket.updateMany({
+            where: {
+              userId: userId,
+              status: "pending",
+            },
+            data: {
+              status: "expired",
+            },
+          });
+        } else {
+          await prisma.serviceProvider.update({
+            where: { id: userId },
+            data: {
+              suspendedUntilForCancel: suspendedUntil,
+            },
+          });
+  
+          // Expire all pending tickets for this service provider
+          await prisma.ticket.updateMany({
+            where: {
+              providerId: userId,
+              status: "pending",
+            },
+            data: {
+              status: "expired",
+            },
+          });
+        }
+  
+        return c.json({ error: "Cancellation limit reached. You have been suspended for 24 hours.", status: 403 });
+      }
+
+
+    const userOrProviderId = ticket.userId === userId ? ticket.userId : ticket.providerId;
+
+    // Update cancel limit for user or service provider
+    if (userOrProviderId) {
+      if (ticket.userId === userId) {
+        await prisma.user.update({
+          where: { id: userOrProviderId },
+          data: {
+            cancelLimit: {
+              increment: 1,
+            },
+          },
+        });
+      } else {
+        await prisma.serviceProvider.update({
+          where: { id: userOrProviderId },
+          data: {
+            cancelLimit: {
+              increment: 1,
+            },
+          },
+        });
+      }
+    }
+
+
+    await prisma.ticket.update({
+      where: {
+        id: ticketIdNumber,
+      },
+      data: {
+        status: "cancel",
+        cancellationReason: reason || "No reason provided",
+      },
+    });
+
+    const notificationContent = `Ticket has been canceled. Reason: ${
+      reason || "No reason provided"
+    }.`;
+    await prisma.notification.update({
+      where: {
+        ticketId: ticketIdNumber,
+      },
+      data: {
+        content: notificationContent,
+        userId: ticket.userId || null,
+        providerId: ticket.providerId || null,
+        serviceownedId: ticket.serviceownedId,
+      },
+    });
+ 
+    return c.json({ message: "ticket marked as cancelled " }, 200);
+  } catch (error: any) {
+    console.error("Error canceling the ticket: ", error);
+    return c.json(
+      { error: "Failed to cancel the ticket", details: error.message },
+      500
+    );
+  }
+});
+
+// done request
+serviceRouter.put("/ticket/done/:ticketId", jwtAuthMiddleware, async (c) => {
+  const user = (c.req as any).user;
+  const prisma = new PrismaClient({
+    datasourceUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+
+  const userId = user.id as string;
+  const ticketId = c.req.param("ticketId");
+  const { rating, comment } = await c.req.json();
+
+  try {
+    const ticketIdNumber = parseInt(ticketId as string, 10);
+
+    const ticket = await prisma.ticket.findUnique({
+      where: {
+        id: ticketIdNumber,
+      },
+      include: {
+        user: true,
+        provider: true,
+        service: true,
+      },
+    });
+
+    if (!ticket) {
+      return c.json({ error: "Ticket not found" }, 404);
+    }
+
+    if (ticket.userId !== userId && ticket.providerId !== userId) {
+      return c.json({ error: "Unauthorized action" }, 403);
     }
 
     await prisma.ticket.update({
       where: {
         id: ticketIdNumber,
-        status: 'working'
+        status: "working",
       },
       data: {
-        status: 'done',
+        status: "done",
       },
     });
 
@@ -440,13 +625,16 @@ serviceRouter.put('/ticket/done/:ticketId', jwtAuthMiddleware, async (c) => {
         ticketId: ticketIdNumber,
         serviceId: ticket.serviceId,
         rating: rating,
-        comment: comment || 'No comment provided',
+        comment: comment || "No comment provided",
       },
     });
 
     const calculateAverageRating = (reviews: { rating: number }[]) => {
       if (reviews.length === 0) return 0;
-      const totalRating = reviews.reduce((acc, review) => acc + review.rating, 0);
+      const totalRating = reviews.reduce(
+        (acc, review) => acc + review.rating,
+        0
+      );
       return parseFloat((totalRating / reviews.length).toFixed(1));
     };
 
@@ -462,32 +650,43 @@ serviceRouter.put('/ticket/done/:ticketId', jwtAuthMiddleware, async (c) => {
     });
     await prisma.service.update({
       where: { id: ticket.serviceId },
-      data: { 
+      data: {
         rating: averageRating,
-        reviewCount: reviewCount}, 
+        reviewCount: reviewCount,
+      },
     });
 
-    return c.json({ message: "Ticket marked as done and review created." }, 200);  
+    return c.json(
+      { message: "Ticket marked as done and review created." },
+      200
+    );
   } catch (error: any) {
-    console.error('Error marking ticket as done and creating review: ', error);
-    return c.json({ error: 'Failed to mark ticket as done and create review', details: error.message }, 500);
+    console.error("Error marking ticket as done and creating review: ", error);
+    return c.json(
+      {
+        error: "Failed to mark ticket as done and create review",
+        details: error.message,
+      },
+      500
+    );
   }
 });
 
-// management status request
-serviceRouter.put('/ticket/:status/:ticketId', jwtAuthMiddleware, async (c) => {
+// Management status request
+serviceRouter.put("/ticket/:status/:ticketId", jwtAuthMiddleware, async (c) => {
   const user = (c.req as any).user;
   const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());
 
   const userId = user.id as string;
-  const ticketId = c.req.param('ticketId');
-  const status = c.req.param('status');
+  const ticketId = c.req.param("ticketId");
+  const status = c.req.param("status");
 
   try {
     const ticketIdNumber = parseInt(ticketId as string, 10);
 
+    // Fetch the ticket with necessary relations
     const ticket = await prisma.ticket.findUnique({
       where: {
         id: ticketIdNumber,
@@ -500,18 +699,79 @@ serviceRouter.put('/ticket/:status/:ticketId', jwtAuthMiddleware, async (c) => {
       },
     });
 
+    // Validate the existence of the ticket
     if (!ticket) {
-      return c.json({ error: 'Ticket not found' }, 404);
+      return c.json({ error: "Ticket not found" }, 404);
     }
 
+    // Validate the user's permission to manage the ticket
     if (!ticket.serviceownedId || ticket.serviceownedId !== userId) {
-      return c.json({ error: 'Unauthorized action' }, 403);
+      return c.json({ error: "Unauthorized action" }, 403);
     }
 
-    if (status !== 'working' && status !== 'rejected') {
-      return c.json({ error: 'Invalid status parameter' }, 400);
+    // Check if the ticket request has expired
+    if (ticket.createdAt < new Date(Date.now() - 2 * 60 * 60 * 1000)) {
+      return c.json({ error: "Ticket request has expired" }, 403);
     }
 
+    // Validate status parameter
+    if (status !== "working" && status !== "rejected") {
+      return c.json({ error: "Invalid status parameter" }, 400);
+    }
+
+    // Handle rejection logic
+    if (status === "rejected") {
+      const rejectionCount = await prisma.ticket.count({
+        where: {
+          serviceownedId: userId,
+          status: "rejected",
+          createdAt: {
+            gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // Last 24 hours
+          },
+        },
+      });
+
+      const rejectLimit = 3; // Set your reject limit here
+
+         // Increment the reject limit for the service provider
+         await prisma.serviceProvider.update({
+          where: { id: ticket.serviceownedId },
+          data: {
+            rejectLimit: { increment: 1 },
+          },
+        });
+
+          if (rejectionCount >= rejectLimit) {
+        // Suspend the service provider
+        const suspendedUntil = new Date(Date.now() + 24 * 60 * 60 * 1000); // Suspension until tomorrow
+        
+        // Update the service provider to set suspension status
+        await prisma.serviceProvider.update({
+          where: { id: userId },
+          data: { suspendedUntilForReject: suspendedUntil },
+        });
+
+       
+        // Set all services of the provider to unavailable
+        await prisma.service.updateMany({
+          where: { providerId: userId },
+          data: { availability: "No" }, // Assuming "availability" is the field to update
+        });
+
+        // Expire all pending tickets owned by the service provider
+        await prisma.ticket.updateMany({
+          where: {
+            serviceownedId: userId,
+            status: "pending", // Only affect pending tickets
+          },
+          data: { status: "expired" }, // Change status to expired
+        });
+
+        return c.json({ error: "You have been suspended for exceeding the rejection limit.", status: 403 });
+      }
+    }
+
+    // Update the ticket status
     await prisma.ticket.update({
       where: {
         id: ticketIdNumber,
@@ -521,9 +781,11 @@ serviceRouter.put('/ticket/:status/:ticketId', jwtAuthMiddleware, async (c) => {
       },
     });
 
+    // Construct notification message
     const serviceName = ticket.service?.name || "the service";
-    let notificationMessage = `Your ticket status has been ${status === 'working' ? 'accepted' : status}. for ${serviceName}.`;
+    const notificationMessage = `Your ticket status has been ${status === "working" ? "accepted" : "rejected"} for ${serviceName}.`;
 
+    // Update notification content
     const existingNotification = await prisma.notification.findUnique({
       where: { ticketId: ticketIdNumber },
     });
@@ -533,24 +795,23 @@ serviceRouter.put('/ticket/:status/:ticketId', jwtAuthMiddleware, async (c) => {
         where: { ticketId: ticketIdNumber },
         data: {
           content: notificationMessage,
-          serviceownedId: null,
         },
       });
     }
 
-    return c.json({ message: 'Ticket status updated successfully' }, 200);
-
+    return c.json({ message: "Ticket status updated successfully" }, 200);
   } catch (error: any) {
-    console.error('Error updating ticket status: ', error);
-    return c.json({ error: 'Failed to update ticket status', details: error.message }, 500);
+    console.error("Error updating ticket status: ", error);
+    return c.json(
+      { error: "Failed to update ticket status", details: error.message },
+      500
+    );
   }
 });
 
+// Create service request
 
-
-// Create service request 
-
-serviceRouter.post('/createreq/:serviceid', async (c) => {
+serviceRouter.post("/createreq/:serviceid", async (c) => {
   const user = (c.req as any).user;
   const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,
@@ -559,7 +820,7 @@ serviceRouter.post('/createreq/:serviceid', async (c) => {
   const userId = user.id as string;
 
   try {
-    const serviceId = c.req.param('serviceid');
+    const serviceId = c.req.param("serviceid");
 
     const service = await prisma.service.findUnique({
       where: { id: serviceId },
@@ -567,27 +828,49 @@ serviceRouter.post('/createreq/:serviceid', async (c) => {
     });
 
     if (!service) {
-      return c.json({ error: 'Service provider not found' }, 404);
+      return c.json({ error: "Service provider not found" }, 404);
     }
 
-    const serviceownedId = service.providerId; 
+    const serviceownedId = service.providerId;
     if (userId === serviceownedId) {
       return c.json({ error: "You can't request your own services." }, 403);
     }
+
+    const suspendedUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { suspendedUntil: true },
+    });
+
+    const suspendedProvider = await prisma.serviceProvider.findUnique({
+      where: { id: userId },
+      select: { suspendedUntilForCancel: true },
+    });
+
+    const currentDate = new Date();
+    
+    if (suspendedUser && suspendedUser.suspendedUntil !== null && suspendedUser.suspendedUntil > currentDate) {
+      return c.json({ error: "Your account is suspended until tomorrow due to excessive cancel request. You cannot create a service request." }, 403);
+    }
+
+    if (suspendedProvider && suspendedProvider.suspendedUntilForCancel !== null && suspendedProvider.suspendedUntilForCancel > currentDate) {
+      return c.json({ error: "Your account is suspended until tomorrow due to excessive cancel request. You cannot create a service request." }, 403);
+    }
+
+
     const body: CreateServiceReqBody = await c.req.json();
 
     if (!body.date || !body.time || !body.role) {
-      return c.json({ error: 'Missing required fields' }, 400);
+      return c.json({ error: "Missing required fields" }, 400);
     }
 
-    const providerId = body.role === 'service' ? userId : null; 
+    const providerId = body.role === "service" ? userId : null;
 
     const servicereq = await prisma.ticket.create({
       data: {
-        userId: body.role === 'service' ? null : userId, 
+        userId: body.role === "service" ? null : userId,
         serviceId: serviceId,
-        providerId: providerId, 
-        serviceownedId: serviceownedId, 
+        providerId: providerId,
+        serviceownedId: serviceownedId,
         status: "pending",
         time: body.time,
         date: body.date,
@@ -596,42 +879,47 @@ serviceRouter.post('/createreq/:serviceid', async (c) => {
     });
 
     let notificationContent: string;
-    if (body.role === 'service') {
+    if (body.role === "service") {
       const providerUser = await prisma.serviceProvider.findUnique({
-        where: { id: userId }, 
+        where: { id: userId },
         select: { name: true },
       });
-      notificationContent = `New service request by  ${providerUser?.name || 'Service Provider'}`;
+      notificationContent = `New service request by  ${
+        providerUser?.name || "Service Provider"
+      }`;
     } else {
       const userMakingRequest = await prisma.user.findUnique({
-        where: { id: userId }, 
+        where: { id: userId },
         select: { name: true },
       });
-      notificationContent = `New service request by ${userMakingRequest?.name || 'User'}`;
+      notificationContent = `New service request by ${
+        userMakingRequest?.name || "User"
+      }`;
     }
 
     await prisma.notification.create({
       data: {
-        userId: body.role === 'service' ? null : userId, 
-        providerId: providerId, 
-        ticketId: servicereq.id, 
+        userId: body.role === "service" ? null : userId,
+        providerId: providerId,
+        ticketId: servicereq.id,
         content: notificationContent,
         read: false,
-        serviceownedId: serviceownedId, 
+        serviceownedId: serviceownedId,
       },
     });
 
-
-    return c.json({message: "request created"},200);
+    return c.json({ message: "request created" }, 200);
   } catch (error: any) {
-    console.error('Error creating service request:', error);
-    return c.json({ error: 'Failed to create service request', details: error.message }, 500);
+    console.error("Error creating service request:", error);
+    return c.json(
+      { error: "Failed to create service request", details: error.message },
+      500
+    );
   }
 });
 
-
-// schedule route 
-serviceRouter.get('/schedule',jwtAuthMiddleware, async (c) => {
+// schedule route
+serviceRouter.get("/schedule", jwtAuthMiddleware, async (c) => {
   const user = (c.req as any).user;
   const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,
@@ -641,11 +929,8 @@ serviceRouter.get('/schedule',jwtAuthMiddleware, async (c) => {
     const schedule = await prisma.ticket.findMany({
       where: {
         serviceownedId: userId,
-        OR: [
-          { role: "service" },
-          { role: "user" }
-        ],
-        status:"working",
+        OR: [{ role: "service" }, { role: "user" }],
+        status: "working",
       },
       select: {
         id: true,
@@ -658,48 +943,70 @@ serviceRouter.get('/schedule',jwtAuthMiddleware, async (c) => {
             name: true,
             price: true,
             category: true,
-          }
+          },
         },
         user: {
           select: {
             name: true,
             address: true,
             contactNo: true,
-          }
+          },
         },
         provider: {
           select: {
             name: true,
-            address:true,
+            address: true,
             contactNo: true,
-          }
-        }
+          },
+        },
       },
     });
     return c.json(schedule);
   } catch (error: any) {
-    console.error('Error fetching service requests: ', error);
-    return c.json({ error: 'Failed to fetch service requests', details: error.message }, 500);
+    console.error("Error fetching service requests: ", error);
+    return c.json(
+      { error: "Failed to fetch service requests", details: error.message },
+      500
+    );
   }
 });
 
-
-// manage route 
-serviceRouter.get('/manage',jwtAuthMiddleware, async (c) => {
+// Manage route
+serviceRouter.get("/manage", jwtAuthMiddleware, async (c) => {
   const user = (c.req as any).user;
   const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());
   const userId = user.id as string;
+
   try {
+    // Check if the provider is suspended
+    const suspendedProvider = await prisma.serviceProvider.findUnique({
+      where: { id: userId },
+      select: { suspendedUntilForReject: true },
+    });
+
+    const currentDate = new Date();
+
+    // Check suspension status
+    if (suspendedProvider && suspendedProvider.suspendedUntilForReject) {
+      // If suspended until a future date, return an error response
+      if (suspendedProvider.suspendedUntilForReject > currentDate) {
+        return c.json({
+          error: "Your account is suspended until tomorrow due to excessive service rejections . All your services are deactivated.",
+        }, 403);
+      }
+    }
+
+    // Fetch pending requests if not suspended
     const manage = await prisma.ticket.findMany({
       where: {
         serviceownedId: userId,
-        OR: [
-          { role: "service" },
-          { role: "user" }
-        ],
-        status:"pending",
+        OR: [{ role: "service" }, { role: "user" }],
+        status: "pending",
+        createdAt: {
+          gte: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        },
       },
       select: {
         id: true,
@@ -712,32 +1019,37 @@ serviceRouter.get('/manage',jwtAuthMiddleware, async (c) => {
             name: true,
             price: true,
             category: true,
-          }
+          },
         },
         user: {
           select: {
             name: true,
             address: true,
             contactNo: true,
-          }
+          },
         },
         provider: {
           select: {
             name: true,
             contactNo: true,
-          }
-        }
+          },
+        },
       },
     });
+
     return c.json(manage);
   } catch (error: any) {
-    console.error('Error fetching service requests: ', error);
-    return c.json({ error: 'Failed to fetch service requests', details: error.message }, 500);
+    console.error("Error fetching service requests: ", error);
+    return c.json(
+      { error: "Failed to fetch service requests", details: error.message },
+      500
+    );
   }
 });
 
+
 // Fetch notifications
-serviceRouter.get('/notifications', jwtAuthMiddleware, async (c) => {
+serviceRouter.get("/notifications", jwtAuthMiddleware, async (c) => {
   const user = (c.req as any).user;
   const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,
@@ -750,14 +1062,11 @@ serviceRouter.get('/notifications', jwtAuthMiddleware, async (c) => {
       where: {
         OR: [
           {
-            serviceownedId: userId, 
+            serviceownedId: userId,
           },
           {
             serviceownedId: null,
-            OR: [
-              { userId: userId }, 
-              { providerId: userId },
-            ],
+            OR: [{ userId: userId }, { providerId: userId }],
           },
         ],
       },
@@ -773,23 +1082,25 @@ serviceRouter.get('/notifications', jwtAuthMiddleware, async (c) => {
       },
     });
 
-
     return c.json(notifications);
   } catch (error: any) {
-    console.error('Error fetching notifications: ', error);
-    return c.json({ error: 'Failed to fetch notifications', details: error.message }, 500);
+    console.error("Error fetching notifications: ", error);
+    return c.json(
+      { error: "Failed to fetch notifications", details: error.message },
+      500
+    );
   }
 });
 
 
 // fetch service
-serviceRouter.get('/:serviceId', async (c) => {
+serviceRouter.get("/:serviceId", async (c) => {
   const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,
   }).$extends(withAccelerate());
 
   try {
-    const serviceId  = c.req.param('serviceId'); 
+    const serviceId = c.req.param("serviceId");
 
     const service = await prisma.service.findFirst({
       where: {
@@ -829,12 +1140,18 @@ serviceRouter.get('/:serviceId', async (c) => {
     });
 
     if (!service) {
-      return c.json({ error: "Service not found or you don't have access" }, 404);
+      return c.json(
+        { error: "Service not found or you don't have access" },
+        404
+      );
     }
 
     return c.json(service);
   } catch (error: any) {
-    console.error('Error fetching service details:', error);
-    return c.json({ error: 'Failed to fetch service details', details: error.message }, 500);
+    console.error("Error fetching service details:", error);
+    return c.json(
+      { error: "Failed to fetch service details", details: error.message },
+      500
+    );
   }
 });

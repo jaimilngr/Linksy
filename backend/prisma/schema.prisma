@@ -21,6 +21,9 @@ model User {
   tokenExpiresAt    DateTime?
   resetPasswordToken     String?      
   resetTokenExpiresAt    DateTime? 
+  cancelLimit         Int            @default(0)        
+  lastCancelExceededAt DateTime?                      
+  suspendedUntil      DateTime?
   notifications     Notification[]
   comments          Comment[]
   reviews           Review[] 
@@ -48,6 +51,12 @@ model ServiceProvider {
   tokenExpiresAt    DateTime?
   resetPasswordToken     String?            
   resetTokenExpiresAt    DateTime?  
+  cancelLimit         Int            @default(0)        
+  lastCancelExceededAt DateTime? 
+  rejectLimit         Int                 @default(0)       
+  lastRejectExceededAt DateTime?                            
+  suspendedUntilForCancel DateTime?       
+  suspendedUntilForReject DateTime?                               
   services          Service[]           @relation("ProviderServices")
   comments          Comment[]
   reviews           Review[] 
@@ -112,6 +121,7 @@ enum TicketStatus {
   cancel
   rejected
   done
+  expired
 }
 
 model Review {

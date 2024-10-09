@@ -48,12 +48,17 @@ export const Manager = () => {
       console.log('Fetched Manager:', response.data);
       setManager(response.data);
     } catch (err) {
-      setError('Failed to fetch Manager data.');
+      console.error('Error fetching manager data:', err);
+      
+      if (axios.isAxiosError(err) && err.response) {
+        setError(err.response.data.error || 'Failed to fetch Manager data.');
+      } else {
+        setError('Failed to fetch Manager data.');
+      }
     } finally {
       setLoading(false);
     }
   };
-
   useEffect(() => {
     fetchManager();
   }, []);
@@ -72,7 +77,7 @@ export const Manager = () => {
 
   const confirmAction = async () => {
     if (currentTicketId === null || currentAction === null) return;
-
+  
     try {
       const token = Cookies.get('token');
       const url = currentAction === 'accept'
@@ -84,9 +89,15 @@ export const Manager = () => {
           Authorization: `Bearer ${token}`,
         },
       });
+      
       console.log(`${currentAction === 'accept' ? 'Accepted' : 'Rejected'} ticket with ID: ${currentTicketId}`);
-     await fetchManager(); 
+      await fetchManager(); 
     } catch (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        setError(error.response.data.error || 'An unknown error occurred.');
+      } else {
+        setError('Failed to process the action.');
+      }
       console.error(`Error ${currentAction === 'accept' ? 'accepting' : 'rejecting'} ticket:`, error);
     } finally {
       setIsModalOpen(false);

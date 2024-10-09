@@ -6,11 +6,10 @@ import { commentRouter } from "./Routers/comment";
 
 const app = new Hono();
 
-app.use("/*" ,cors())
+app.use("/*", cors());
 app.route('/api/v1/user', authRouter);
 app.route('/api/v1/service', serviceRouter);
-app.route("/api/v1/comment" , commentRouter)
-
-
+app.route("/api/v1/comment", commentRouter);
+app.get('/', (c) => c.text('Cron Trigger is set up!'));
 
 export default app;

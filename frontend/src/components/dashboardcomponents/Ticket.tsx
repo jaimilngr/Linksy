@@ -53,7 +53,8 @@ export const Ticket = () => {
           } else if (error.response.status === 401) {
             setError('Unauthorized access. Please log in.');
           } else {
-            setError(`Error: ${error.response.status} - ${error.response.data.message}`);
+            setError(`${error.response.data.error} `);
+
           }
         } else if (error.request) {
           setError('No response from the server. Please try again later.');
@@ -98,7 +99,8 @@ export const Ticket = () => {
       );
     } catch (error: any) {
       if (error.response) {
-        setCancelError(`Error: ${error.response.status} - ${error.response.data.message}`);
+        setError(`${error.response.data.error} `);
+
       } else {
         setCancelError('Failed to cancel the ticket. Please try again later.');
       }
@@ -141,7 +143,8 @@ export const Ticket = () => {
       );
     } catch (error: any) {
       if (error.response) {
-        setDoneError(`Error: ${error.response.status} - ${error.response.data.message}`);
+        setError(`${error.response.data.error} `);
+
       } else {
         setDoneError('Failed to mark the ticket as done. Please try again later.');
       }
