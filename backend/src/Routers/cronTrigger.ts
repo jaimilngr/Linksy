@@ -13,9 +13,11 @@ export const crontriggerRoute = new Hono<{
 // Function to reset the limits (pass environment for Prisma initialization)
 export const resetLimits = async (env: any) => {
   const prisma = new PrismaClient({
-    datasourceUrl: env.DATABASE_URL, // Access DATABASE_URL from the environment
+    datasources: {
+      db: { url: env.DATABASE_URL }
+    }
   }).$extends(withAccelerate());
-
+  
   try {
     await prisma.user.updateMany({
       data: {
