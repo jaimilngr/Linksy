@@ -16,11 +16,14 @@ const CategoryPage = ({ location }: { location: { latitude: number; longitude: n
     const fetchServices = async () => {
       const { latitude, longitude } = location; 
 
-      if (!latitude || !longitude) {
+      if (latitude === 0 && longitude === 0) {
         setError("Please select your location.");
         setLoading(false);
         return;
       }
+
+      setLoading(true); 
+      setError(null);     
 
       try {
         const response = await axios.get(

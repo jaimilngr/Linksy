@@ -11,6 +11,15 @@ interface Ticket {
   };
   date: string;
   time: string;
+  provider:provider
+  user:user
+}
+
+interface provider {
+  cancelLimit: number;
+}
+interface user {
+  cancelLimit: number;
 }
 
 const formatDate = (dateString: string): string => {
@@ -35,6 +44,8 @@ export const Ticket = () => {
   const [currentTicketId, setCurrentTicketId] = useState<string | null>(null);
   const [cancelError, setCancelError] = useState<string | null>(null); 
   const [doneError, setDoneError] = useState<string | null>(null); 
+
+  const totalLimit = 2;
 
   useEffect(() => {
     const fetchTickets = async () => {
@@ -68,6 +79,8 @@ export const Ticket = () => {
 
     fetchTickets();
   }, []);
+
+
 
   const handleCancelRequest = async (ticketId: string) => {
     setCurrentTicketId(ticketId);
@@ -111,6 +124,8 @@ export const Ticket = () => {
       setCustomCancelReason('');
     }
   };
+
+
 
   const handleMarkAsDone = async (ticketId: string) => {
     setCurrentTicketId(ticketId);
@@ -176,6 +191,23 @@ export const Ticket = () => {
     <div className="px-4 py-8 max-w-3xl">
       <h3 className="text-3xl font-bold text-text mb-8 text-center">Your Service Tickets</h3>
       {error && <p className="text-red-600">{error}</p>}
+      
+      
+      
+      <div>
+    <div className='text-left mb-5 text-red-500'>
+  {tickets.map((ticket, index) => {
+    const cancelLimit = ticket.provider.cancelLimit || ticket.user?.cancelLimit;
+    const remainingLimit = totalLimit - (cancelLimit || 0); 
+    return (
+      <h3 key={index}>
+        Remaining Cancel Limit: {remainingLimit}
+      </h3>
+    );
+  })}
+  </div>    
+</div>
+
 
   {/* Active Tickets Section */}
 <div>

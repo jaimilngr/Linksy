@@ -362,6 +362,7 @@ serviceRouter.get("/ticket", async (c) => {
 
   const userId = user.id as string;
 
+  
   try {
     const servicereq = await prisma.ticket.findMany({
       where: {
@@ -376,6 +377,16 @@ serviceRouter.get("/ticket", async (c) => {
         service: {
           select: {
             name: true,
+          },
+        },
+        user: {
+          select: {
+            cancelLimit: true, 
+          },
+        },
+        provider: {
+          select: {
+            cancelLimit: true, 
           },
         },
       },
@@ -1037,7 +1048,19 @@ serviceRouter.get("/manage", jwtAuthMiddleware, async (c) => {
       },
     });
 
-    return c.json(manage);
+
+    // Fetch reject limit of the service provider
+    const serviceOwner = await prisma.serviceProvider.findUnique({
+      where: { id: userId },
+      select: { rejectLimit: true },
+    });
+
+    // Prepare response
+    return c.json({
+      manage,
+      rejectLimit: serviceOwner?.rejectLimit ?? null, 
+    });
+
   } catch (error: any) {
     console.error("Error fetching service requests: ", error);
     return c.json(

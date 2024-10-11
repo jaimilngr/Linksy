@@ -17,7 +17,8 @@ interface User {
 
 interface Provider {
   name: string | null;  
-  contactNo?: string;    
+  contactNo?: string;  
+  rejectLimit: number;  
 }
 
 interface ManagerItem {
@@ -32,21 +33,24 @@ interface ManagerItem {
 export const Manager = () => {
   const [manager, setManager] = useState<ManagerItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [rejectLimit, setRejectLimit] = useState<number>(0);
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [currentAction, setCurrentAction] = useState<'accept' | 'reject' | null>(null);
   const [currentTicketId, setCurrentTicketId] = useState<number | null>(null);
+  const totalRejectLimit = 3;
 
   const fetchManager = async () => {
     try {
       const token = Cookies.get('token');
-      const response = await axios.get<ManagerItem[]>(`${BACKEND_URL}/api/v1/service/manage`, { 
+      const response = await axios.get<{ manage: ManagerItem[]; rejectLimit: number }>(`${BACKEND_URL}/api/v1/service/manage`, { 
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
       console.log('Fetched Manager:', response.data);
-      setManager(response.data);
+      setManager(response.data.manage); 
+      setRejectLimit(response.data.rejectLimit);
     } catch (err) {
       console.error('Error fetching manager data:', err);
       
@@ -59,6 +63,7 @@ export const Manager = () => {
       setLoading(false);
     }
   };
+  
   useEffect(() => {
     fetchManager();
   }, []);
@@ -77,7 +82,7 @@ export const Manager = () => {
 
   const confirmAction = async () => {
     if (currentTicketId === null || currentAction === null) return;
-  
+
     try {
       const token = Cookies.get('token');
       const url = currentAction === 'accept'
@@ -110,6 +115,13 @@ export const Manager = () => {
     <div className="p-6 bg-background rounded-lg">
       <h3 className="text-2xl font-semibold mb-6">Manage your Tickets</h3>
       
+      <div className='text-red-500 mb-5'>
+        <h3>Remaining Reject Limit: {totalRejectLimit - rejectLimit}</h3> 
+        {totalRejectLimit - rejectLimit === 1 && (
+          <p className="text-red-600">This is your last reject limit. If you reject more, you will get suspended.</p>
+        )}
+      </div>
+
       {loading ? (
         <div className="flex justify-center items-center h-full">
           <div className="loader border-t-4 border-blue-500 border-solid rounded-full w-12 h-12 animate-spin flex justify-center items-center"></div>
@@ -178,6 +190,9 @@ export const Manager = () => {
             <p className="mb-6">
               Are you sure you want to {currentAction === 'accept' ? 'accept' : 'reject'} this ticket?
             </p>
+            {currentAction === 'reject' && totalRejectLimit - rejectLimit === 1 && (
+              <p className="text-red-600">This is your last reject limit. If you reject more, you will get suspended.</p>
+            )}
             <div className="flex justify-end space-x-4">
               <button
                 onClick={() => setIsModalOpen(false)}
