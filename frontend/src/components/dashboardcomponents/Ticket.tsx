@@ -193,20 +193,16 @@ export const Ticket = () => {
       {error && <p className="text-red-600">{error}</p>}
       
       
-      
       <div>
-    <div className='text-left mb-5 text-red-500'>
-  {tickets.map((ticket, index) => {
-    const cancelLimit = ticket.provider.cancelLimit || ticket.user?.cancelLimit;
-    const remainingLimit = totalLimit - (cancelLimit || 0); 
-    return (
-      <h3 key={index}>
-        Remaining Cancel Limit: {remainingLimit}
+  <div className='text-left mb-5 text-red-500'>
+    {tickets.length > 0 && (
+      <h3>
+        Remaining Cancel Limit: {totalLimit - (tickets[0].provider.cancelLimit || tickets[0].user?.cancelLimit || 0)}
       </h3>
-    );
-  })}
+    )}
   </div>    
 </div>
+
 
 
   {/* Active Tickets Section */}
