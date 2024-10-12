@@ -47,36 +47,37 @@ export const Ticket = () => {
 
   const totalLimit = 2;
 
-  useEffect(() => {
-    const fetchTickets = async () => {
-      try {
-        const token = Cookies.get('token');
-        const response = await axios.get(`${BACKEND_URL}/api/v1/service/ticket`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        setTickets(response.data);
-      } catch (error: any) {
-        if (error.response) {
-          if (error.response.status === 404) {
-            setError('Tickets not found. Please check the endpoint.');
-          } else if (error.response.status === 401) {
-            setError('Unauthorized access. Please log in.');
-          } else {
-            setError(`${error.response.data.error} `);
-
-          }
-        } else if (error.request) {
-          setError('No response from the server. Please try again later.');
+  const fetchTickets = async () => {
+    try {
+      const token = Cookies.get('token');
+      const response = await axios.get(`${BACKEND_URL}/api/v1/service/ticket`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setTickets(response.data);
+    } catch (error: any) {
+      if (error.response) {
+        if (error.response.status === 404) {
+          setError('Tickets not found. Please check the endpoint.');
+        } else if (error.response.status === 401) {
+          setError('Unauthorized access. Please log in.');
         } else {
-          setError('Request setup error. Please try again later.');
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
+          setError(`${error.response.data.error} `);
 
+        }
+      } else if (error.request) {
+        setError('No response from the server. Please try again later.');
+      } else {
+        setError('Request setup error. Please try again later.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
+  useEffect(() => {
     fetchTickets();
   }, []);
 
@@ -110,6 +111,7 @@ export const Ticket = () => {
           ticket.id === currentTicketId ? { ...ticket, status: 'cancel' } : ticket
         )
       );
+      await fetchTickets();
     } catch (error: any) {
       if (error.response) {
         setError(`${error.response.data.error} `);
@@ -156,6 +158,7 @@ export const Ticket = () => {
           ticket.id === currentTicketId ? { ...ticket, status: 'done' } : ticket
         )
       );
+      await fetchTickets();
     } catch (error: any) {
       if (error.response) {
         setError(`${error.response.data.error} `);
