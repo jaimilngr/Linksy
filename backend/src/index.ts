@@ -1,21 +1,40 @@
+// worker.ts
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { cronJob } from './Routers/cronTrigger';
 import { authRouter } from './Routers/user';
 import { serviceRouter } from './Routers/provider';
-import { commentRouter } from "./Routers/comment";
-import { cronJob } from './Routers/cronTrigger';
-import { env } from 'hono/adapter';
+import { commentRouter } from './Routers/comment';
 
 const app = new Hono();
 
+// Middleware
 app.use("/*", cors());
+
+// API Routes
 app.route('/api/v1/user', authRouter);
 app.route('/api/v1/service', serviceRouter);
 app.route("/api/v1/comment", commentRouter);
-app.get('/trigger-cron-manually', async (c) => {
-    await cronJob(env);
-    return c.json({ message: 'Cron job triggered manually' });
-  });
-  app.get('/', (c) => c.text('Cron Trigger is set up!'));
 
-export default app;
+// HTTP Fetch Handler
+app.get('/', (c) => c.text('Worker is running!'));
+
+// Handle Scheduled Events
+app.get('/__scheduled', async (c) => {
+  console.log('Scheduled event triggered');
+  await cronJob(c.env);  // Call your cron job function here
+  return c.text('Cron job executed!');
+});
+
+// Default export for the Cloudflare Worker
+export default {
+  async fetch(request: Request, env: any, ctx: ExecutionContext) {
+    return app.fetch(request, env, ctx);
+  },
+
+  // Scheduled Event Handler
+  async scheduled(event: ScheduledEvent, env: any, ctx: ExecutionContext) {
+    console.log('Scheduled event triggered');
+    ctx.waitUntil(cronJob(env));
+  },
+};
