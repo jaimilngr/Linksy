@@ -1,4 +1,3 @@
-// worker.ts
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { cronJob } from './Routers/cronTrigger';
@@ -8,21 +7,18 @@ import { commentRouter } from './Routers/comment';
 
 const app = new Hono();
 
-// Middleware
 app.use("/*", cors());
 
 // API Routes
 app.route('/api/v1/user', authRouter);
 app.route('/api/v1/service', serviceRouter);
 app.route("/api/v1/comment", commentRouter);
-
-// HTTP Fetch Handler
 app.get('/', (c) => c.text('Worker is running!'));
 
 // Handle Scheduled Events
 app.get('/__scheduled', async (c) => {
   console.log('Scheduled event triggered');
-  await cronJob(c.env);  // Call your cron job function here
+  await cronJob(c.env);  
   return c.text('Cron job executed!');
 });
 

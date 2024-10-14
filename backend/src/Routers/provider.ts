@@ -22,11 +22,6 @@ interface ServiceCreateBody {
   lng: number;
 }
 
-interface ClosestServicesBody {
-  latitude: number;
-  longitude: number;
-  category: string;
-}
 
 interface CreateServiceReqBody {
   date: string;

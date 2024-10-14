@@ -15,10 +15,6 @@ export const authRouter = new Hono<{
   }
 }>();
 
-interface Environment {
-  MAILJET_API_KEY: string;
-  MAILJET_API_SECRET: string;
-}
 
 interface MailjetResponse {
   Messages: {
