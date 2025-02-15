@@ -146,6 +146,7 @@ serviceRouter.get("/myservices", async (c) => {
   }
 });
 
+// Update Service Route
 serviceRouter.put("/update/:serviceid", async (c) => {
   const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,
@@ -216,6 +217,8 @@ serviceRouter.put("/update/:serviceid", async (c) => {
   }
 });
 
+// Delete Service Route
+
 serviceRouter.delete("/delete/:serviceid", async (c) => {
   const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,
@@ -255,6 +258,100 @@ serviceRouter.delete("/delete/:serviceid", async (c) => {
   }
 });
 
+// // Search Service Route
+
+// serviceRouter.get("/closest", async (c) => {
+//   const prisma = new PrismaClient({
+//     datasourceUrl: c.env.DATABASE_URL,
+//   }).$extends(withAccelerate());
+
+//   try {
+//     const latitudeQuery = c.req.query("latitude");
+//     const longitudeQuery = c.req.query("longitude");
+//     const category = c.req.query("category");
+
+//     if (!latitudeQuery || !longitudeQuery || !category) {
+//       return c.json({ error: "Missing parameters" }, 400);
+//     }
+
+//     const latitude = parseFloat(latitudeQuery);
+//     const longitude = parseFloat(longitudeQuery);
+
+//     if (isNaN(latitude) || isNaN(longitude)) {
+//       return c.json({ error: "Invalid latitude or longitude" }, 400);
+//     }
+
+//     if (typeof category !== "string") {
+//       return c.json({ error: "Invalid category" }, 400);
+//     }
+
+//     const services = await prisma.service.findMany({
+//       where: {
+//         category: category,
+//       },
+//       select: {
+//         id: true,
+//         providerId: true,
+//         name: true,
+//         description: true,
+//         reviewCount: true,
+//         price: true,
+//         timing: true,
+//         contactNo: true,
+//         latitude: true,
+//         longitude: true,
+//         rating: true,
+//       },
+//     });
+
+//     if (services.length === 0) {
+//       return c.json([], 200);
+//     }
+
+//     const calculateDistance = (
+//       lat1: number,
+//       lng1: number,
+//       lat2: number,
+//       lng2: number
+//     ) => {
+//       const R = 6371;
+//       const dLat = (lat2 - lat1) * (Math.PI / 180);
+//       const dLng = (lng2 - lng1) * (Math.PI / 180);
+//       const a =
+//         Math.sin(dLat / 2) ** 2 +
+//         Math.cos(lat1 * (Math.PI / 180)) *
+//           Math.cos(lat2 * (Math.PI / 180)) *
+//           Math.sin(dLng / 2) ** 2;
+//       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+//       return R * c;
+//     };
+
+//     const servicesWithDistance = services.map((service) => {
+//       const distance = calculateDistance(
+//         latitude,
+//         longitude,
+//         service.latitude,
+//         service.longitude
+//       );
+//       return { ...service, distance };
+//     });
+
+//     servicesWithDistance.sort((a, b) => a.distance - b.distance);
+
+//     return c.json(servicesWithDistance, {
+//       headers: {
+//         "Content-Type": "application/json",
+//       },
+//     });
+//   } catch (error: any) {
+//     console.error("Error retrieving closest services:", error);
+//     return c.json(
+//       { error: "Failed to retrieve closest services", details: error.message },
+//       500
+//     );
+//   }
+// });
+
 serviceRouter.get("/closest", async (c) => {
   const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,
@@ -264,6 +361,7 @@ serviceRouter.get("/closest", async (c) => {
     const latitudeQuery = c.req.query("latitude");
     const longitudeQuery = c.req.query("longitude");
     const category = c.req.query("category");
+    const sortByQuery = c.req.query("sortBy") || ""; // Default sorting by location (no sortBy)
 
     if (!latitudeQuery || !longitudeQuery || !category) {
       return c.json({ error: "Missing parameters" }, 400);
@@ -280,10 +378,11 @@ serviceRouter.get("/closest", async (c) => {
       return c.json({ error: "Invalid category" }, 400);
     }
 
+    // Split the sortBy query to handle multiple sorting options
+    const sortBy = sortByQuery.split(",");
+
     const services = await prisma.service.findMany({
-      where: {
-        category: category,
-      },
+      where: { category },
       select: {
         id: true,
         providerId: true,
@@ -303,49 +402,56 @@ serviceRouter.get("/closest", async (c) => {
       return c.json([], 200);
     }
 
-    const calculateDistance = (
-      lat1: number,
-      lng1: number,
-      lat2: number,
-      lng2: number
-    ) => {
-      const R = 6371;
+    // Calculate the distance between two points
+    const calculateDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => {
+      const R = 6371; // Radius of the Earth in km
       const dLat = (lat2 - lat1) * (Math.PI / 180);
       const dLng = (lng2 - lng1) * (Math.PI / 180);
       const a =
         Math.sin(dLat / 2) ** 2 +
-        Math.cos(lat1 * (Math.PI / 180)) *
-          Math.cos(lat2 * (Math.PI / 180)) *
-          Math.sin(dLng / 2) ** 2;
+        Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLng / 2) ** 2;
       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return R * c;
+      return R * c; // Distance in km
     };
 
-    const servicesWithDistance = services.map((service) => {
-      const distance = calculateDistance(
-        latitude,
-        longitude,
-        service.latitude,
-        service.longitude
-      );
-      return { ...service, distance };
-    });
+    // Map services and calculate their distance
+    const servicesWithDistance = services.map((service) => ({
+      ...service,
+      distance: calculateDistance(latitude, longitude, service.latitude, service.longitude),
+    }));
 
+    // Sort services first by distance (default behavior)
     servicesWithDistance.sort((a, b) => a.distance - b.distance);
 
-    return c.json(servicesWithDistance, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    // If a specific sortBy option (rating or reviews or price) is provided, sort accordingly
+    if (sortBy.length > 0) {
+      for (const criterion of sortBy) {
+        if (criterion === "rating_desc") {
+          servicesWithDistance.sort((a, b) => b.rating - a.rating); // Highest rated first
+        } else if (criterion === "rating_asc") {
+          servicesWithDistance.sort((a, b) => a.rating - b.rating); // Lowest rated first
+        } else if (criterion === "reviews_asc") {
+          servicesWithDistance.sort((a, b) => a.reviewCount - b.reviewCount); // Lowest reviewed first
+        } else if (criterion === "reviews_desc") {
+          servicesWithDistance.sort((a, b) => b.reviewCount - a.reviewCount); // Most reviewed first
+        } else if (criterion === "price_asc") {
+          servicesWithDistance.sort((a, b) => a.price - b.price); // Lowest price first
+        } else if (criterion === "price_desc") {
+          servicesWithDistance.sort((a, b) => b.price - a.price); // Highest price first
+        }
+      }
+    }
+
+    return c.json(servicesWithDistance, { headers: { "Content-Type": "application/json" } });
+
   } catch (error: any) {
     console.error("Error retrieving closest services:", error);
-    return c.json(
-      { error: "Failed to retrieve closest services", details: error.message },
-      500
-    );
+    return c.json({ error: "Failed to retrieve closest services", details: error.message }, 500);
   }
 });
+
+
+
 
 // fetch service request tickets
 

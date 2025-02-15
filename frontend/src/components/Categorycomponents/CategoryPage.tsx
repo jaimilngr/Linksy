@@ -3,18 +3,19 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { BACKEND_URL } from "../../config";
 import { Footer } from "../Uicomponents/Footer";
-
+import SortDropdown from "../Uicomponents/SortDropdown";
 
 const CategoryPage = ({ location }: { location: { latitude: number; longitude: number } }) => {
   const { title } = useParams<{ title: string }>();
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate(); 
+  const [sortOptions, setSortOptions] = useState<string[]>([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchServices = async () => {
-      const { latitude, longitude } = location; 
+      const { latitude, longitude } = location;
 
       if (latitude === 0 && longitude === 0) {
         setError("Please select your location.");
@@ -22,8 +23,8 @@ const CategoryPage = ({ location }: { location: { latitude: number; longitude: n
         return;
       }
 
-      setLoading(true); 
-      setError(null);     
+      setLoading(true);
+      setError(null);
 
       try {
         const response = await axios.get(
@@ -33,6 +34,7 @@ const CategoryPage = ({ location }: { location: { latitude: number; longitude: n
               latitude,
               longitude,
               category: title,
+              sortBy: sortOptions.join(","),
             },
             headers: {
               "Content-Type": "application/json",
@@ -58,7 +60,7 @@ const CategoryPage = ({ location }: { location: { latitude: number; longitude: n
     };
 
     fetchServices();
-  }, [title,location]);
+  }, [title, location, sortOptions]); 
 
   const renderStars = (rating: number) => {
     const maxStars = 5;
@@ -93,11 +95,15 @@ const CategoryPage = ({ location }: { location: { latitude: number; longitude: n
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-6 md:mb-8">
           {title} Services
         </h1>
+        <div className="flex justify-end">
+
+        <SortDropdown sortOptions={sortOptions} setSortOptions={setSortOptions} />
+        </div>
 
         {loading && (
-              <div className="flex justify-center items-center h-full">
-                <div className="loader border-t-4 border-blue-500 border-solid rounded-full w-12 h-12 animate-spin"></div>
-              </div>
+          <div className="flex justify-center items-center h-full">
+            <div className="loader border-t-4 border-blue-500 border-solid rounded-full w-12 h-12 animate-spin"></div>
+          </div>
         )}
 
         {error && (
@@ -113,31 +119,23 @@ const CategoryPage = ({ location }: { location: { latitude: number; longitude: n
         )}
 
         {!loading && !error && services.length > 0 && (
-          <div className="mt-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-10">
+          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-10">
             {services.map((service) => (
               <div
                 key={service.id}
                 className="border border-gray-300 p-6 rounded-lg shadow-lg bg-[#ebeef4] dark:bg-[#374151] flex flex-col"
-                onClick={() => navigate(`/service/${service.id}`)} 
+                onClick={() => navigate(`/service/${service.id}`)}
               >
-                <h2 className="text-xl md:text-2xl font-semibold mb-2">
-                  {service.name}
-                </h2>
+                <h2 className="text-xl md:text-2xl font-semibold mb-2">{service.name}</h2>
                 <div className="flex items-center mb-2">
                   {renderStars(service.rating || 0)}
-                  <span className="ml-2"> 
-                    ( {service.reviewCount || 0} ratings )
+                  <span className="ml-2">
+                    ({service.reviewCount || 0} reviews)
                   </span>
                 </div>
-                <p className="mb-4">
-                  {service.description || "Service description not available."}
-                </p>
-                <p className="mb-4">
-                  Distance: {service.distance ? service.distance.toFixed(2) : "N/A"} km
-                </p>
-                <p className="mb-4">
-                  Contact: {service.contactNo || "N/A"}
-                </p>
+                <p className="mb-4">{service.description || "Service description not available."}</p>
+                <p className="mb-4">Distance: {service.distance ? service.distance.toFixed(2) : "N/A"} km</p>
+                <p className="mb-4">Contact: {service.contactNo || "N/A"}</p>
               </div>
             ))}
           </div>
