@@ -205,7 +205,7 @@ const SortDropdown = ({
             </div>
           ))}
 
-          {/* {sortOptions.some(opt => opt.startsWith('price_')) && (
+          {sortOptions.some(opt => opt.startsWith('price_')) && (
             <div className="px-4 py-2 bg-gray-100 dark:bg-[#575c63]">
               <div className="flex flex-col space-y-2">
                 <div>
@@ -238,7 +238,7 @@ const SortDropdown = ({
                 </button>
               </div>
             </div>
-          )} */}
+          )}
         </div>
       )}
     </div>
