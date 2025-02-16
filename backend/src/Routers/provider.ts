@@ -351,7 +351,6 @@ serviceRouter.delete("/delete/:serviceid", async (c) => {
 //     );
 //   }
 // });
-
 serviceRouter.get("/closest", async (c) => {
   const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,
@@ -378,11 +377,40 @@ serviceRouter.get("/closest", async (c) => {
       return c.json({ error: "Invalid category" }, 400);
     }
 
-    // Split the sortBy query to handle multiple sorting options
+    // Parse the sortBy query to handle price_min and price_max
     const sortBy = sortByQuery.split(",");
+    let priceMin: number | undefined = undefined;
+    let priceMax: number | undefined = undefined;
+    let sortPrice: string = "";
 
+    sortBy.forEach((criterion) => {
+      if (criterion.startsWith("price_min:")) {
+        const priceValue = parseFloat(criterion.split(":")[1]);
+        if (!isNaN(priceValue)) {
+          priceMin = priceValue;
+        }
+      } else if (criterion.startsWith("price_max:")) {
+        const priceValue = parseFloat(criterion.split(":")[1]);
+        if (!isNaN(priceValue)) {
+          priceMax = priceValue;
+        }
+      } else if (["price_asc", "price_desc"].includes(criterion)) {
+        sortPrice = criterion;
+      }
+    });
+
+    // Split the sortBy query to handle multiple sorting options
     const services = await prisma.service.findMany({
-      where: { category },
+      where: {
+        category,
+        ...(priceMin !== undefined && priceMax !== undefined
+          ? { price: { gte: priceMin, lte: priceMax } }
+          : priceMin !== undefined
+          ? { price: { gte: priceMin } }
+          : priceMax !== undefined
+          ? { price: { lte: priceMax } }
+          : {}),
+      },
       select: {
         id: true,
         providerId: true,
@@ -423,6 +451,15 @@ serviceRouter.get("/closest", async (c) => {
     // Sort services first by distance (default behavior)
     servicesWithDistance.sort((a, b) => a.distance - b.distance);
 
+    // Handle sorting by price (if specified in sortBy)
+    if (sortPrice) {
+      if (sortPrice === "price_asc") {
+        servicesWithDistance.sort((a, b) => a.price - b.price); // Lowest price first
+      } else if (sortPrice === "price_desc") {
+        servicesWithDistance.sort((a, b) => b.price - a.price); // Highest price first
+      }
+    }
+
     // If a specific sortBy option (rating or reviews or price) is provided, sort accordingly
     if (sortBy.length > 0) {
       for (const criterion of sortBy) {
@@ -434,10 +471,6 @@ serviceRouter.get("/closest", async (c) => {
           servicesWithDistance.sort((a, b) => a.reviewCount - b.reviewCount); // Lowest reviewed first
         } else if (criterion === "reviews_desc") {
           servicesWithDistance.sort((a, b) => b.reviewCount - a.reviewCount); // Most reviewed first
-        } else if (criterion === "price_asc") {
-          servicesWithDistance.sort((a, b) => a.price - b.price); // Lowest price first
-        } else if (criterion === "price_desc") {
-          servicesWithDistance.sort((a, b) => b.price - a.price); // Highest price first
         }
       }
     }
@@ -449,7 +482,6 @@ serviceRouter.get("/closest", async (c) => {
     return c.json({ error: "Failed to retrieve closest services", details: error.message }, 500);
   }
 });
-
 
 
 

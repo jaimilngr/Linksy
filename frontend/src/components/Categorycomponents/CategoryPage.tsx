@@ -135,6 +135,7 @@ const CategoryPage = ({ location }: { location: { latitude: number; longitude: n
                 </div>
                 <p className="mb-4">{service.description || "Service description not available."}</p>
                 <p className="mb-4">Distance: {service.distance ? service.distance.toFixed(2) : "N/A"} km</p>
+                <p className="mb-4">Price: {service.price || "N/A"}</p>
                 <p className="mb-4">Contact: {service.contactNo || "N/A"}</p>
               </div>
             ))}

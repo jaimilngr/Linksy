@@ -19,19 +19,19 @@ const SortDropdown = ({
     reviews_: "desc",
     price_: "desc",
   });
-  const [minPrice, setMinPrice] = useState(0);
-  const [maxPrice, setMaxPrice] = useState(1000);
+  const [minPrice, setMinPrice] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
   const [selectedOption, setSelectedOption] = useState<string>("Sort By");
 
   const toggleDropdown = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent event from bubbling up
+    e.stopPropagation();
     setIsOpen(!isOpen);
   };
 
   const toggleSortOption = (option: string) => {
     const order = sortingOrder[option];
     const fullOption = `${option}${order}`;
-    
+
     setSortOptions((prev) => {
       const updatedOptions = prev.includes(fullOption)
         ? prev.filter((item) => item !== fullOption)
@@ -43,22 +43,24 @@ const SortDropdown = ({
     if (optionLabel) {
       setSelectedOption(optionLabel);
     }
+
+    setIsOpen(false); // Close dropdown after selection
   };
 
   const toggleOrder = (option: string) => {
     const newOrder = sortingOrder[option] === "asc" ? "desc" : "asc";
-    
+
     setSortingOrder((prev) => ({
       ...prev,
-      [option]: newOrder
+      [option]: newOrder,
     }));
 
     setSortOptions((prev) => {
       const oldOption = `${option}${sortingOrder[option]}`;
       const newOption = `${option}${newOrder}`;
-      
+
       if (prev.includes(oldOption)) {
-        return prev.map(opt => opt === oldOption ? newOption : opt);
+        return prev.map((opt) => (opt === oldOption ? newOption : opt));
       }
       return prev;
     });
@@ -67,14 +69,8 @@ const SortDropdown = ({
   const handleClickOutside = (e: MouseEvent) => {
     const dropdown = document.getElementById("dropdown");
     const button = document.getElementById("dropdown-button");
-    
-    // Close only if click is outside both the dropdown and button
-    if (
-      dropdown && 
-      !dropdown.contains(e.target as Node) && 
-      button && 
-      !button.contains(e.target as Node)
-    ) {
+
+    if (dropdown && !dropdown.contains(e.target as Node) && button && !button.contains(e.target as Node)) {
       setIsOpen(false);
     }
   };
@@ -86,38 +82,47 @@ const SortDropdown = ({
     };
   }, []);
 
-  useEffect(() => {
-    const queryParams: Record<string, string> = {};
+  const handlePriceChange = (setter: React.Dispatch<React.SetStateAction<string>>, value: string) => {
+    const formattedValue = value.replace(/^0+/, ""); // Remove leading zeros
+    setter(formattedValue);
+  };
 
-    if (sortOptions.length > 0) {
-      queryParams.sortBy = sortOptions.join(",");
-    }
-
-    if (minPrice > 0) {
-      queryParams.price_min = minPrice.toString();
-    }
-
-    if (maxPrice < 1000) {
-      queryParams.price_max = maxPrice.toString();
-    }
-
-    console.log("Sort Options:", sortOptions);
-    console.log("Updated Query Params:", queryParams);
-  }, [sortOptions, sortingOrder, minPrice, maxPrice]);
-
-  // OK Button handler to apply min/max filter and preserve asc/desc
   const handleOkClick = () => {
     setSortOptions((prev) => {
-      // Ensure ascending or descending order is maintained after OK click
-      const updatedOptions = prev.filter(option => {
-        // Remove price options with old min/max values before adding new ones
-        return !option.startsWith("price_");
-      });
-      if (minPrice > 0 || maxPrice < 1000) {
+      const updatedOptions = prev.filter(
+        (option) => !option.startsWith("price_") && !option.startsWith("price_min") && !option.startsWith("price_max")
+      );
+
+      if (sortingOrder.price_) {
         updatedOptions.push(`price_${sortingOrder.price_}`);
       }
+
+      if (minPrice) {
+        updatedOptions.push(`price_min:${minPrice}`);
+      }
+
+      if (maxPrice) {
+        updatedOptions.push(`price_max:${maxPrice}`);
+      }
+
+      // Instead of updating the URL, you can use the queryParams here for the API call
+      const queryParams: Record<string, string> = {};
+
+      if (updatedOptions.length > 0) {
+        queryParams.sortBy = updatedOptions.join(",");
+      }
+
+      if (minPrice) queryParams.minPrice = minPrice;
+      if (maxPrice) queryParams.maxPrice = maxPrice;
+
+      console.log("Updated Query Params:", queryParams);
+      // Send queryParams in your API request, e.g., call API to fetch filtered data
+      // apiCall(queryParams);
+
       return updatedOptions;
     });
+
+    setIsOpen(false); // Close dropdown after applying filters
   };
 
   return (
@@ -128,32 +133,15 @@ const SortDropdown = ({
         className="flex items-center justify-between w-full px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300 dark:bg-[#374151] cursor-pointer"
       >
         <span>{selectedOption}</span>
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          strokeWidth="1.5"
-          stroke="currentColor"
-          className="size-6"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75"
-          />
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor" className="size-6">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 1 1-3 0m3 0a1.5 1.5 0 1 0-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m-9.75 0h9.75" />
         </svg>
       </button>
 
       {isOpen && (
-        <div
-          id="dropdown"
-          className="absolute right-0 mt-2 w-full bg-white border rounded-lg shadow-lg z-10 dark:bg-[#374151] overflow-hidden"
-        >
+        <div id="dropdown" className="absolute right-0 mt-2 w-full bg-white border rounded-lg shadow-lg z-10 dark:bg-[#374151] overflow-hidden">
           {sortOptionsList.map((option) => (
-            <div
-              key={option.value}
-              className="flex items-center justify-between px-4 py-2 hover:bg-gray-100 cursor-pointer dark:hover:bg-[#575c63]"
-            >
+            <div key={option.value} className="flex items-center justify-between px-4 py-2 hover:bg-gray-100 cursor-pointer dark:hover:bg-[#575c63]">
               <div className="flex items-center">
                 <input
                   type="checkbox"
@@ -170,70 +158,35 @@ const SortDropdown = ({
                   toggleOrder(option.value);
                 }}
               >
-                {sortingOrder[option.value] === "asc" ? (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth="1.5"
-                    stroke="currentColor"
-                    className="size-6"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M3 4.5h14.25M3 9h9.75M3 13.5h5.25m5.25-.75L17.25 9m0 0L21 12.75M17.25 9v12"
-                    />
-                  </svg>
-                ) : (
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    strokeWidth="1.5"
-                    stroke="currentColor"
-                    className="size-6"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0-3.75-3.75M17.25 21 21 17.25"
-                    />
-                  </svg>
-                )}
+                {sortingOrder[option.value] === "asc" ? "↑" : "↓"}
               </button>
             </div>
           ))}
 
-          {sortOptions.some(opt => opt.startsWith('price_')) && (
-            <div className="px-4 py-2 bg-gray-100 dark:bg-[#575c63]">
+          {sortOptions.some((opt) => opt.startsWith("price_")) && (
+            <div className="px-4 py-2 bg-gray-100 dark:bg-[#374151]">
               <div className="flex flex-col space-y-2">
                 <div>
                   <label className="block mb-1">Min Price:</label>
                   <input
                     type="number"
                     value={minPrice}
-                    onChange={(e) => setMinPrice(Number(e.target.value))}
-                    className="p-1 border rounded-md w-full"
-                    placeholder="Min Price"
+                    onChange={(e) => handlePriceChange(setMinPrice, e.target.value)}
+                    className="p-1 border rounded-md w-full dark:text-black"
+                    placeholder="₹ 0"
                   />
                 </div>
-                {minPrice > 0 && (
-                  <div>
-                    <label className="block mb-1">Max Price:</label>
-                    <input
-                      type="number"
-                      value={maxPrice}
-                      onChange={(e) => setMaxPrice(Number(e.target.value))}
-                      className="p-1 border rounded-md w-full"
-                      placeholder="Max Price"
-                    />
-                  </div>
-                )}
-                <button
-                  onClick={handleOkClick}
-                  className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-md"
-                >
+                <div>
+                  <label className="block mb-1">Max Price:</label>
+                  <input
+                    type="number"
+                    value={maxPrice}
+                    onChange={(e) => handlePriceChange(setMaxPrice, e.target.value)}
+                    className="p-1 border rounded-md w-full dark:text-black"
+                    placeholder="₹ 1000"
+                  />
+                </div>
+                <button onClick={handleOkClick} className="mt-2 px-4 py-2 bg-blue-500 text-white rounded-md">
                   OK
                 </button>
               </div>
