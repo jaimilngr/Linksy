@@ -20,6 +20,7 @@ interface ServiceCreateBody {
   availability: string;
   lat: number;
   lng: number;
+  negotiability: boolean;
 }
 
 
@@ -27,6 +28,7 @@ interface CreateServiceReqBody {
   date: string;
   time: string;
   role: string;
+  negotiatedPrice?: number;
 }
 
 serviceRouter.use("/create", jwtAuthMiddleware);
@@ -99,6 +101,7 @@ serviceRouter.post("/create", async (c) => {
         contactNo: body.contactNo,
         latitude: body.lat,
         longitude: body.lng,
+        negotiability: body.negotiability ? "true" : "false",
       },
     });
 
@@ -204,6 +207,7 @@ serviceRouter.put("/update/:serviceid", async (c) => {
         contactNo: body.contactNo,
         latitude: body.lat,
         longitude: body.lng,
+        negotiability: body.negotiability ? "true" : "false",
       },
     });
 
@@ -260,97 +264,6 @@ serviceRouter.delete("/delete/:serviceid", async (c) => {
 
 // // Search Service Route
 
-// serviceRouter.get("/closest", async (c) => {
-//   const prisma = new PrismaClient({
-//     datasourceUrl: c.env.DATABASE_URL,
-//   }).$extends(withAccelerate());
-
-//   try {
-//     const latitudeQuery = c.req.query("latitude");
-//     const longitudeQuery = c.req.query("longitude");
-//     const category = c.req.query("category");
-
-//     if (!latitudeQuery || !longitudeQuery || !category) {
-//       return c.json({ error: "Missing parameters" }, 400);
-//     }
-
-//     const latitude = parseFloat(latitudeQuery);
-//     const longitude = parseFloat(longitudeQuery);
-
-//     if (isNaN(latitude) || isNaN(longitude)) {
-//       return c.json({ error: "Invalid latitude or longitude" }, 400);
-//     }
-
-//     if (typeof category !== "string") {
-//       return c.json({ error: "Invalid category" }, 400);
-//     }
-
-//     const services = await prisma.service.findMany({
-//       where: {
-//         category: category,
-//       },
-//       select: {
-//         id: true,
-//         providerId: true,
-//         name: true,
-//         description: true,
-//         reviewCount: true,
-//         price: true,
-//         timing: true,
-//         contactNo: true,
-//         latitude: true,
-//         longitude: true,
-//         rating: true,
-//       },
-//     });
-
-//     if (services.length === 0) {
-//       return c.json([], 200);
-//     }
-
-//     const calculateDistance = (
-//       lat1: number,
-//       lng1: number,
-//       lat2: number,
-//       lng2: number
-//     ) => {
-//       const R = 6371;
-//       const dLat = (lat2 - lat1) * (Math.PI / 180);
-//       const dLng = (lng2 - lng1) * (Math.PI / 180);
-//       const a =
-//         Math.sin(dLat / 2) ** 2 +
-//         Math.cos(lat1 * (Math.PI / 180)) *
-//           Math.cos(lat2 * (Math.PI / 180)) *
-//           Math.sin(dLng / 2) ** 2;
-//       const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-//       return R * c;
-//     };
-
-//     const servicesWithDistance = services.map((service) => {
-//       const distance = calculateDistance(
-//         latitude,
-//         longitude,
-//         service.latitude,
-//         service.longitude
-//       );
-//       return { ...service, distance };
-//     });
-
-//     servicesWithDistance.sort((a, b) => a.distance - b.distance);
-
-//     return c.json(servicesWithDistance, {
-//       headers: {
-//         "Content-Type": "application/json",
-//       },
-//     });
-//   } catch (error: any) {
-//     console.error("Error retrieving closest services:", error);
-//     return c.json(
-//       { error: "Failed to retrieve closest services", details: error.message },
-//       500
-//     );
-//   }
-// });
 serviceRouter.get("/closest", async (c) => {
   const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,
@@ -507,6 +420,8 @@ serviceRouter.get("/ticket", async (c) => {
         time: true,
         date: true,
         status: true,
+        originalPrice: true,
+        negotiatedPrice: true,
         service: {
           select: {
             name: true,
@@ -953,8 +868,8 @@ serviceRouter.put("/ticket/:status/:ticketId", jwtAuthMiddleware, async (c) => {
   }
 });
 
-// Create service request
 
+// Create service request
 serviceRouter.post("/createreq/:serviceid", async (c) => {
   const user = (c.req as any).user;
   const prisma = new PrismaClient({
@@ -968,7 +883,7 @@ serviceRouter.post("/createreq/:serviceid", async (c) => {
 
     const service = await prisma.service.findUnique({
       where: { id: serviceId },
-      select: { providerId: true },
+      select: { providerId: true, price: true },
     });
 
     if (!service) {
@@ -1000,15 +915,46 @@ serviceRouter.post("/createreq/:serviceid", async (c) => {
       return c.json({ error: "Your account is suspended until tomorrow due to excessive cancel request. You cannot create a service request." }, 403);
     }
 
-
     const body: CreateServiceReqBody = await c.req.json();
 
     if (!body.date || !body.time || !body.role) {
       return c.json({ error: "Missing required fields" }, 400);
     }
 
+    // Handle negotiated price if provided
+    const negotiatedPrice = body.negotiatedPrice !== undefined 
+      ? Number(body.negotiatedPrice) 
+      : service.price;
+    
+    // Validate that negotiated price is reasonable (optional)
+    if (negotiatedPrice > service.price) {
+      return c.json({ error: "Negotiated price cannot be higher than original price" }, 400);
+    }
+
+    // Calculate minimum allowed price - similar logic to frontend for consistency
+    const calculateMinAllowedPrice = (servicePrice: number) => {
+      if (servicePrice <= 1000) {
+        return Math.max(servicePrice - 300, servicePrice * 0.7);  
+      } else if (servicePrice <= 5000) {
+        return Math.max(servicePrice - 1000, servicePrice * 0.75); 
+      } else if (servicePrice <= 10000) {
+        return Math.max(servicePrice - 2000, servicePrice * 0.8);
+      } else {
+        return Math.max(servicePrice - 3000, servicePrice * 0.85); 
+      }
+    };
+
+    const minAllowedPrice = Math.floor(calculateMinAllowedPrice(service.price));
+    
+    if (negotiatedPrice < minAllowedPrice) {
+      return c.json({ 
+        error: `Negotiated price is too low. Minimum allowed is ${minAllowedPrice}` 
+      }, 400);
+    }
+
     const providerId = body.role === "service" ? userId : null;
 
+    // Create the ticket with negotiated price
     const servicereq = await prisma.ticket.create({
       data: {
         userId: body.role === "service" ? null : userId,
@@ -1019,16 +965,19 @@ serviceRouter.post("/createreq/:serviceid", async (c) => {
         time: body.time,
         date: body.date,
         role: body.role,
+        negotiatedPrice: negotiatedPrice,  // Add negotiated price here
+        originalPrice: service.price,     // Store original price for reference
       },
     });
 
+    // Customize notification content to include negotiation info if applicable
     let notificationContent: string;
     if (body.role === "service") {
       const providerUser = await prisma.serviceProvider.findUnique({
         where: { id: userId },
         select: { name: true },
       });
-      notificationContent = `New service request by  ${
+      notificationContent = `New service request by ${
         providerUser?.name || "Service Provider"
       }`;
     } else {
@@ -1039,6 +988,11 @@ serviceRouter.post("/createreq/:serviceid", async (c) => {
       notificationContent = `New service request by ${
         userMakingRequest?.name || "User"
       }`;
+    }
+
+    // Add price info to notification if negotiated
+    if (negotiatedPrice < service.price) {
+      notificationContent += ` with price offer: ₹${negotiatedPrice} (original: ₹${service.price})`;
     }
 
     await prisma.notification.create({
@@ -1052,7 +1006,11 @@ serviceRouter.post("/createreq/:serviceid", async (c) => {
       },
     });
 
-    return c.json({ message: "request created" }, 200);
+    return c.json({ 
+      message: "request created", 
+      isNegotiated: negotiatedPrice < service.price,
+      negotiatedPrice: negotiatedPrice
+    }, 200);
   } catch (error: any) {
     console.error("Error creating service request:", error);
     return c.json(
@@ -1158,6 +1116,8 @@ serviceRouter.get("/manage", jwtAuthMiddleware, async (c) => {
         time: true,
         date: true,
         status: true,
+        originalPrice: true,
+        negotiatedPrice: true,
         service: {
           select: {
             name: true,
@@ -1271,6 +1231,7 @@ serviceRouter.get("/:serviceId", async (c) => {
         latitude: true,
         longitude: true,
         contactNo: true,
+        negotiability:true,
         availability: true,
         rating: true,
         reviews: {

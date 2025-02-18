@@ -25,6 +25,8 @@ interface ManagerItem {
   id: number;
   date: string; 
   time: string;
+  originalPrice: number;
+  negotiatedPrice: number;
   service: Service;
   user: User | null;
   provider: Provider | null; 
@@ -48,7 +50,6 @@ export const Manager = () => {
           Authorization: `Bearer ${token}`,
         },
       });
-      console.log('Fetched Manager:', response.data);
       setManager(response.data.manage); 
       setRejectLimit(response.data.rejectLimit);
     } catch (err) {
@@ -95,7 +96,6 @@ export const Manager = () => {
         },
       });
       
-      console.log(`${currentAction === 'accept' ? 'Accepted' : 'Rejected'} ticket with ID: ${currentTicketId}`);
       await fetchManager(); 
     } catch (error) {
       if (axios.isAxiosError(error) && error.response) {
@@ -144,7 +144,8 @@ export const Manager = () => {
                   <p className="text-lg"> - {item.time}</p>
                 </div>
                 <p className="text-lg">Service: {item.service.name}</p>
-                <p className="text-lg">Price: ₹{item.service.price}</p>
+                <p className="text-lg">OriginalPrice: ₹{item.originalPrice}</p>
+                <p className="text-lg">NegotiatedPrice: ₹{item.negotiatedPrice}</p>
 
                 {item.user && (
                   <>

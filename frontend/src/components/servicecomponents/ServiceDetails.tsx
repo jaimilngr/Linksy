@@ -5,8 +5,8 @@ import { Navbar } from "../Uicomponents/Navbar";
 import { Footer } from "../Uicomponents/Footer";
 import { BACKEND_URL } from "../../config";
 import { useAuth } from "../../Context/Authcontext";
-import { CommentsSection } from "./CommentSection";
 import Cookies from "js-cookie";
+import { TabContent } from "./TabContent";
 
 const ServiceDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +17,11 @@ const ServiceDetails = () => {
   const [activeTab, setActiveTab] = useState<string>("overview");
   const [selecteddate, setDate] = useState<string>("");
   const [time, setTime] = useState<string>("");
+  const [negotiatedPrice, setNegotiatedPrice] = useState<string>("");
+  const [showNegotiationInput, setShowNegotiationInput] =
+    useState<boolean>(false);
+  const [negotiationError, setNegotiationError] = useState<string | null>(null);
+
   const [requestStatus, setRequestStatus] = useState<{
     error: string | null;
   }>({
@@ -60,11 +65,15 @@ const ServiceDetails = () => {
     }
     const date = selecteddate ? new Date(selecteddate).toISOString() : null;
     const role = Cookies.get("role");
+    const finalPrice = negotiatedPrice
+      ? parseInt(negotiatedPrice)
+      : service.price;
+
     try {
       setLoading(true);
       await axios.post(
         `${BACKEND_URL}/api/v1/service/createreq/${id}`,
-        { date, time, role },
+        { date, time, role, negotiatedPrice: finalPrice },
         {
           headers: {
             Authorization: `Bearer ${Cookies.get("token") || ""}`,
@@ -74,7 +83,9 @@ const ServiceDetails = () => {
 
       setDate("");
       setTime("");
-      setSuccessMessage("Service request sent successfully! You will be notified within 2 hours.");
+      setSuccessMessage(
+        "Service request sent successfully! You will be notified within 2 hours."
+      );
       setTimeout(() => {
         setSuccessMessage(null);
       }, 10000);
@@ -104,103 +115,58 @@ const ServiceDetails = () => {
     return <div>Error: {error}</div>;
   }
 
-  const renderTabContent = () => {
-    switch (activeTab) {
-      case "overview":
-        return (
-          <div className="rounded-lg">
-            <p className="text-lg mb-4">{service.description}</p>
-            <div className="mt-6">
-              <h3 className="text-xl font-semibold mb-2">Contact Info</h3>
-              <p className="text-lg mb-1">
-                <strong>Timing:</strong> {service.timing}
-              </p>
-              <p className="text-lg mb-1">
-                <strong>Contact:</strong> {service.contactNo}
-              </p>
-            </div>
-          </div>
-        );
-      case "reviews":
-        return (
-          <div className="rounded-lg">
-            <h2 className="text-3xl font-bold mb-4 border-b-2 border-blue-600 pb-2">
-              Reviews
-            </h2>
+  // Improved negotiation calculations
+  const calculateNegotiationRange = (servicePrice: number) => {
+    let minAllowedPrice = servicePrice;
 
-            {service.reviews && service.reviews.length > 0 ? (
-              service.reviews.map((review: any) => (
-                <div key={review.id} className="mb-4 p-4 border border-gray-200 rounded-lg bg-[#c3ccd6] dark:bg-background hover:shadow-lg transition-shadow duration-200 ease-in-out">
-                  <span className="font-bold text-lg">{review.ticket.user.name || review.ticket.provider.name} :</span>  <span>  {review.comment}</span>
-                </div>
-              ))
-            ) : (
-              <p>No reviews available.</p>
-            )}
-          </div>
-        );
-      case "comment":
-        return (
-          <div className="rounded-lg">
-            <h2 className="text-3xl font-bold mb-4 border-b-2 border-blue-600 pb-2">
-              Comment
-            </h2>
-
-            <p className="text-lg mb-4">
-              {" "}
-              <CommentsSection serviceId={id} />
-            </p>
-          </div>
-        );
-        case "map":
-          return (
-            <div className="rounded-lg flex flex-col">
-              <h2 className="text-3xl font-bold mb-4 border-b-2 border-blue-600 pb-2">
-                Map
-              </h2>
-        
-              <p className="text-lg mb-4 text-center">{service.mapLocation}</p>
-              <div className="flex justify-center items-center">
-                {service.latitude && service.longitude ? (
-                  <>
-                    <iframe
-                      width="1000"
-                      height="370"
-                      style={{ border: "0" }}
-                      scrolling="no"
-                      src={`https://maps.google.com/maps?q=${service.latitude},${service.longitude}&hl=en&z=14&output=embed`}
-                    ></iframe>
-                    <br />
-                  
-                  </>
-                ) : (
-                  <p>No location available.</p>
-                )}
-              </div>
-            </div>
-          );
-        
-        
-      case "availability":
-        return (
-          <div className="rounded-lg">
-            <h2 className="text-3xl font-bold mb-4 border-b-2 border-blue-600 pb-2">
-              Availability
-            </h2>
-            <p
-              className={`text-lg mb-4 ${
-                service.availability === "yes"
-                  ? "text-green-500"
-                  : "text-red-500"
-              }`}
-            >
-              {service.availability === "yes" ? "Available" : "Not Available"}
-            </p>{" "}
-          </div>
-        );
-      default:
-        return <div className="rounded-lg">Select a tab to view content.</div>;
+    if (servicePrice <= 1000) {
+      minAllowedPrice = Math.max(servicePrice - 300, servicePrice * 0.7);
+    } else if (servicePrice <= 5000) {
+      minAllowedPrice = Math.max(servicePrice - 1000, servicePrice * 0.75);
+    } else if (servicePrice <= 10000) {
+      minAllowedPrice = Math.max(servicePrice - 2000, servicePrice * 0.8);
+    } else {
+      minAllowedPrice = Math.max(servicePrice - 3000, servicePrice * 0.85);
     }
+
+    return {
+      minAllowedPrice: Math.floor(minAllowedPrice),
+      maxDiscount: servicePrice - Math.floor(minAllowedPrice),
+    };
+  };
+
+  const handleNegotiateClick = () => {
+    setShowNegotiationInput(!showNegotiationInput);
+    if (!showNegotiationInput) {
+      setNegotiationError(null);
+      const { minAllowedPrice } = calculateNegotiationRange(service.price);
+      setNegotiatedPrice(minAllowedPrice.toString());
+    }
+  };
+
+  const validateNegotiatedPrice = (value: string) => {
+    const numValue = parseInt(value);
+    const { minAllowedPrice } = calculateNegotiationRange(service.price);
+
+    if (isNaN(numValue)) {
+      setNegotiationError("Please enter a valid number");
+      return "";
+    }
+
+    if (numValue < minAllowedPrice) {
+      setNegotiationError(`Minimum allowed price is ₹${minAllowedPrice}`);
+      return minAllowedPrice.toString();
+    }
+
+    if (numValue > service.price) {
+      setNegotiationError(
+        "Negotiated price cannot be higher than original price"
+      );
+      return service.price.toString();
+    }
+
+    setNegotiationError(null);
+    return numValue.toString();
   };
 
   const handleShare = () => {
@@ -217,8 +183,8 @@ const ServiceDetails = () => {
 
   return (
     <div>
-        <Navbar/>
-        <div className="container mx-auto py-6 md:py-10 px-4">
+      <Navbar />
+      <div className="container mx-auto py-6 md:py-10 px-4">
         <button
           className="mb-4 bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 dark:bg-blue-700 dark:hover:bg-blue-800"
           onClick={() => navigate(-1)}
@@ -239,7 +205,7 @@ const ServiceDetails = () => {
           </svg>
         </button>
         {service ? (
-          <div className="service-details  p-2  grid grid-cols-1 md:grid-cols-[4fr_1fr] gap-4">
+          <div className="service-details  p-2  grid grid-cols-1 md:grid-cols-[3fr_1fr] gap-4">
             <div className="flex flex-col h-auto border-gray-200 dark:bg-gray-700  dark:border-gray-700 p-5 border-2  rounded-lg">
               <div className="flex items-center justify-between mb-4">
                 <h1 className="text-3xl font-bold">{service.name}</h1>
@@ -377,7 +343,11 @@ const ServiceDetails = () => {
                   </button>
                 </div>
               </div>
-              {renderTabContent()}
+              <TabContent
+                activeTab={activeTab}
+                service={service}
+                id={id || ""}
+              />
             </div>
 
             {/* Pricing Section */}
@@ -390,7 +360,7 @@ const ServiceDetails = () => {
               </p>
               <hr />
 
-              <div className="mb-4 mt-3">
+              <div className="mt-3">
                 <p className="text-md mb-3 text-gray-800 ">
                   <strong className="text-text">Date:</strong>{" "}
                   <input
@@ -398,6 +368,7 @@ const ServiceDetails = () => {
                     value={selecteddate}
                     onChange={(e) => setDate(e.target.value)}
                     className="border p-2 rounded-lg w-full mb-4"
+                    min={new Date().toISOString().split("T")[0]}
                   />
                 </p>
                 <p className="text-md mb-3 text-gray-800 ">
@@ -407,42 +378,147 @@ const ServiceDetails = () => {
                     value={time}
                     onChange={(e) => setTime(e.target.value)}
                     className="border p-2 rounded-lg w-full mb-4"
+                    min={
+                      selecteddate === new Date().toISOString().split("T")[0]
+                        ? new Date().toISOString().slice(11, 16) // Disable past times
+                        : ""
+                    }
                   />{" "}
                 </p>
               </div>
 
-                {service.availability === "yes" ? (
-                  <button
-                    className={`p-2 text-white py-2 rounded justify-center items-center flex transition duration-200 ${
-                      isLoggedIn
-                        ? "bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600"
-                        : "bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600"
-                    }`}
-                    onClick={() => {
-                      if (isLoggedIn) {
-                        CreateServiceRequest();
-                      } else {
-                        navigate("/signup");
-                      }
-                    }}
-                  >
-                    {isLoggedIn ? "Request Now" : "Sign In Now"}
-                  </button>
-                ) : (
-                  <p className="text-red-500 font-semibold text-lg mt-4">
-                    Not Available Currently
-                  </p>
-                )}
+              <div className="mb-4">
+                <button
+                  onClick={handleNegotiateClick}
+                  className="text-blue-600 dark:text-blue-400 flex items-center"
+                >
+                  {showNegotiationInput ? (
+                    <>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5 mr-1"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                      Cancel negotiation
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5 mr-1"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"
+                        />
+                      </svg>
+                      Negotiate price
+                    </>
+                  )}
+                </button>
 
-                {requestStatus.error && (
-                  <p className="text-red-500 mt-2">{requestStatus.error}</p>
-                )}
-                {successMessage && (
-                  <div className="fixed top-24 right-0 mb-4 ml-4 bg-green-100 text-green-700 border border-green-400 p-3 rounded shadow-lg">
-                    {successMessage}
+                {showNegotiationInput && (
+                  <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-600 rounded-lg">
+                    <div className="flex justify-between mb-2">
+                      <span className="text-sm text-gray-500 dark:text-gray-300">
+                        Original price: ₹{service.price}
+                      </span>
+                      <span className="text-sm text-gray-500 dark:text-gray-300">
+                        You save: ₹
+                        {service.price - parseInt(negotiatedPrice || "0")}
+                      </span>
+                    </div>
+
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                        ₹
+                      </span>
+                      <input
+                        type="number"
+                        value={negotiatedPrice}
+                        onChange={(e) =>
+                          setNegotiatedPrice(
+                            validateNegotiatedPrice(e.target.value)
+                          )
+                        }
+                        placeholder="Enter your offer"
+                        className="pl-7 p-2 rounded-lg w-full dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                      />
+                    </div>
+
+                    {negotiationError && (
+                      <p className="text-red-500 mt-1 text-sm">
+                        {negotiationError}
+                      </p>
+                    )}
+
+                    <div className="mt-2 text-sm text-gray-500 dark:text-gray-300">
+                      <p>
+                        Suggested price: ₹
+                        {
+                          calculateNegotiationRange(service.price)
+                            .minAllowedPrice
+                        }{" "}
+                        - ₹{service.price}
+                      </p>
+                      <p className="mt-1">
+                        The service provider may accept or decline your offer.
+                      </p>
+                    </div>
                   </div>
                 )}
-</div>
+              </div>
+
+              {service.availability === "yes" ? (
+                <button
+                  className={`p-2 text-white py-2 rounded justify-center items-center flex transition duration-200 ${
+                    isLoggedIn
+                      ? "bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600"
+                      : "bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600"
+                  }`}
+                  onClick={() => {
+                    if (isLoggedIn) {
+                      CreateServiceRequest();
+                    } else {
+                      navigate("/signup");
+                    }
+                  }}
+                >
+                  {isLoggedIn
+                    ? showNegotiationInput && negotiatedPrice
+                      ? `Request with offer: ₹${negotiatedPrice}`
+                      : "Request Now"
+                    : "Sign In to Request"}
+                </button>
+              ) : (
+                <p className="text-red-500 font-semibold text-lg mt-4">
+                  Not Available Currently
+                </p>
+              )}
+
+              {requestStatus.error && (
+                <p className="text-red-500 mt-2">{requestStatus.error}</p>
+              )}
+              {successMessage && (
+                <div className="fixed top-24 right-0 mb-4 ml-4 bg-green-100 text-green-700 border border-green-400 p-3 rounded shadow-lg">
+                  {successMessage}
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <div>No service found</div>

@@ -82,6 +82,7 @@ model Service {
   longitude   Float
   contactNo   String
   availability String  @default("yes")
+  negotiability String  @default("no")
   reviewCount Int  @default(0)
   reviews     Review[]
   rating      Float            @default(0)
@@ -102,6 +103,8 @@ model Ticket {
   time                 String
   date                 DateTime
   role                 String
+  negotiatedPrice Float?
+  originalPrice   Float?
   notificationId       String?         @unique
   notification         Notification?
   cancellationReason    String?
