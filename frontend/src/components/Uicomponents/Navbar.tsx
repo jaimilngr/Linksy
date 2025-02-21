@@ -223,6 +223,15 @@ export const Navbar = ({onUpdateLocation}: NavbarProps) => {
                           Updates
                         </Link>
                       </li> 
+
+                      <li>
+                        <Link
+                          to="/messages"
+                          className="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
+                        >
+                          Messages
+                        </Link>
+                      </li>
                     </ul>
                     <div className="py-1">
                       <Link

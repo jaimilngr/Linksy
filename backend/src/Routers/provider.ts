@@ -422,6 +422,8 @@ serviceRouter.get("/ticket", async (c) => {
         status: true,
         originalPrice: true,
         negotiatedPrice: true,
+        userId: true,  
+        serviceownedId: true, 
         service: {
           select: {
             name: true,
@@ -430,6 +432,7 @@ serviceRouter.get("/ticket", async (c) => {
         user: {
           select: {
             cancelLimit: true, 
+            name: true,
           },
         },
         provider: {
@@ -1040,6 +1043,8 @@ serviceRouter.get("/schedule", jwtAuthMiddleware, async (c) => {
         time: true,
         date: true,
         status: true,
+        userId: true,
+        serviceownedId: true,
         service: {
           select: {
             name: true,

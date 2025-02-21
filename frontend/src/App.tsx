@@ -8,6 +8,7 @@ import ServiceDetails from "./components/servicecomponents/ServiceDetails";
 import Updates from "./pages/Updates";
 import Categories from "./pages/Categories";
 import ResetPassword from "./components/Authcomponents/ResetPassword";
+import Messages from "./pages/Messages";
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
             <Route path="/service/:id" element={<ServiceDetails  />} />
             <Route path="/updates" element={<Updates />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/messages" element={<Messages/>} />
 
           </Routes>
         </BrowserRouter>
