@@ -32,7 +32,7 @@ const Messages = () => {
           }`}
         >
           {selectedRoom ? (
-            <div className="h-full flex flex-col">
+            <div className="h-full justify-center flex flex-col">
               {/* Back Button for Mobile */}
               <button
                 onClick={() => setSelectedRoom(null)}
