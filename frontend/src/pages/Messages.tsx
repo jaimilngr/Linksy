@@ -21,7 +21,7 @@ const Messages = () => {
         >
           <ChatList
             onSelectRoom={(roomId) => setSelectedRoom(roomId)}
-            user="f865829b-664f-4de5-8c93-ba2d42212479"
+            user="07e39ee4-affb-48da-8ba4-12f47c7b4c52"
           />
         </div>
 
