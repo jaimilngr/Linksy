@@ -53,7 +53,11 @@ const Messages = () => {
         </div>
 
         {/* Chat Component - Visible only when a room is selected */}
-        <div className={`flex-grow transition-all ${selectedRoom ? "block" : "hidden md:block"}`}>
+        <div
+          className={`flex-grow transition-all ${
+            selectedRoom ? "block" : "hidden md:block"
+          }`}
+        >
           {selectedRoom ? (
             <div className="h-full flex items-center justify-center text-gray-500 dark:text-gray-400">
               <Chat roomIdprop={selectedRoom} />
