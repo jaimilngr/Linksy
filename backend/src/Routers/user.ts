@@ -12,6 +12,7 @@ export const authRouter = new Hono<{
     MAILJET_API_KEY: string;
     MAILJET_API_SECRET: string;
     FRONTEND_URL: string;
+    DATA_CACHE: KVNamespace;
   }
 }>();
 
@@ -24,7 +25,6 @@ interface MailjetResponse {
 }
 
 // Middleware for JWT authentication
-
 export const jwtAuthMiddleware = async (c: any, next: any) => {
   const authHeader = c.req.header('Authorization');
 
@@ -45,7 +45,20 @@ export const jwtAuthMiddleware = async (c: any, next: any) => {
   }
 };
 
+// Cache handler 
+export const cacheHandler = {
+  async get(c: any, type: string, key: string) {
+    return c.env.DATA_CACHE.get(`${type}-${key}`, 'json');
+  },
+  
+  async set(c: any, type: string, key: string, data: any, ttl = 300) {
+    return c.env.DATA_CACHE.put(`${type}-${key}`, JSON.stringify(data), { expirationTtl: ttl });
+  },
 
+  async delete(c: any, type: string, key: string) {
+    return c.env.DATA_CACHE.delete(`${type}-${key}`);
+  }
+};
 
 const generateRandomToken = async (length: number): Promise<string> => {
   const uuid = uuidv4().replace(/-/g, '');
@@ -407,12 +420,18 @@ authRouter.post("/signin", async (c) => {
 
     const token = await sign({ id: user.id }, c.env.JWT_Secret);
 
-    return c.json({
+    // Cache the user data with the token
+    const userData = {
       jwt: token,
       name: user.name,
       id: user.id,
       role: role
-    });
+    };
+    
+    // Cache user data with token as the key
+    await cacheHandler.set(c, 'user', user.id, userData, 3600); // Cache for 1 hour
+
+    return c.json(userData);
     
   } catch (e) {
     console.error("Error signing in:", e);
@@ -423,8 +442,7 @@ authRouter.post("/signin", async (c) => {
   }
 });
 
-// password reset  request
-
+// password reset request
 authRouter.post('/request-password-reset', async (c) => {
   const { email } = await c.req.json();
   
@@ -453,11 +471,19 @@ authRouter.post('/request-password-reset', async (c) => {
         where: { id: user.id },
         data: { resetPasswordToken, resetTokenExpiresAt }
       });
+      
+      // Invalidate user cache
+      await cacheHandler.delete(c, 'user', user.id);
+      await cacheHandler.delete(c, 'profile', user.id);
     } else if (serviceProvider) {
       await prisma.serviceProvider.update({
         where: { id: serviceProvider.id },
         data: { resetPasswordToken, resetTokenExpiresAt }
       });
+      
+      // Invalidate service provider cache
+      await cacheHandler.delete(c, 'user', serviceProvider.id);
+      await cacheHandler.delete(c, 'profile', serviceProvider.id);
     }
 
     const resetLink = `${c.env.FRONTEND_URL}/reset-password?token=${resetPasswordToken}`;
@@ -503,6 +529,10 @@ authRouter.post('/reset-password', async (c) => {
           resetTokenExpiresAt: null
         }
       });
+      
+      // Invalidate user cache
+      await cacheHandler.delete(c, 'user', user.id);
+      await cacheHandler.delete(c, 'profile', user.id);
     } else if (serviceProvider) {
       if (serviceProvider.resetTokenExpiresAt && serviceProvider.resetTokenExpiresAt < new Date()) {
         return c.json({ error: 'Token has expired' }, 400);
@@ -516,6 +546,10 @@ authRouter.post('/reset-password', async (c) => {
           resetTokenExpiresAt: null
         }
       });
+      
+      // Invalidate service provider cache
+      await cacheHandler.delete(c, 'user', serviceProvider.id);
+      await cacheHandler.delete(c, 'profile', serviceProvider.id);
     }
 
     return c.json({ message: 'Password reset successful. You can now log in.' });
@@ -546,12 +580,17 @@ authRouter.post('/additional-data', jwtAuthMiddleware, async (c) => {
         where: { id: userId },
         data: { address: address },
       });
-    } catch (error) {
       
+      // Invalidate profile cache
+      await cacheHandler.delete(c, 'profile', userId);
+    } catch (error) {
       await prisma.user.update({
         where: { id: userId },
         data: { address: address },
       });
+      
+      // Invalidate profile cache
+      await cacheHandler.delete(c, 'profile', userId);
     }
 
     return c.json({ success: true });
@@ -561,7 +600,58 @@ authRouter.post('/additional-data', jwtAuthMiddleware, async (c) => {
   }
 });
 
+// fetchs id
+authRouter.get("/me", jwtAuthMiddleware, async (c) => {
+  const user = (c.req as any).user;
 
+  if (!user) {
+    return c.json({ error: "Unauthorized" }, 401);
+  }
+
+  const userId = user.id as string;
+  
+  // Try to get from cache first
+  const cachedUserData = await cacheHandler.get(c, 'me', userId);
+  if (cachedUserData) {
+    return c.json(cachedUserData);
+  }
+
+  const prisma = new PrismaClient({
+    datasourceUrl: c.env.DATABASE_URL,
+  }).$extends(withAccelerate());
+
+  try {
+    const userProfile = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+
+    const serviceProfile = await prisma.serviceProvider.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+
+    let userData;
+    
+    if (userProfile) {
+      userData = { id: userProfile.id, role: "user" };
+    } else if (serviceProfile) {
+      userData = { id: serviceProfile.id, role: "serviceProvider" };
+    } else {
+      return c.json({ error: "User not found" }, 404);
+    }
+    
+    // Cache the user data
+    await cacheHandler.set(c, 'me', userId, userData, 3600); // Cache for 1 hour
+    
+    return c.json(userData);
+  } catch (error: any) {
+    console.error("Error fetching user data:", error);
+    return c.json({ error: "Failed to fetch user data", details: error.message }, 500);
+  }
+});
+
+// Profile route (get)
 authRouter.get('/profile', jwtAuthMiddleware, async (c) => {
   const user = (c.req as any).user;
 
@@ -570,6 +660,12 @@ authRouter.get('/profile', jwtAuthMiddleware, async (c) => {
   }
 
   const userId = user.id as string;
+  
+  // Try to get from cache first
+  const cachedProfile = await cacheHandler.get(c, 'profile', userId);
+  if (cachedProfile) {
+    return c.json(cachedProfile);
+  }
 
   const prisma = new PrismaClient({
     datasourceUrl: c.env.DATABASE_URL,
@@ -583,18 +679,23 @@ authRouter.get('/profile', jwtAuthMiddleware, async (c) => {
 
     const serviceProfile = await prisma.serviceProvider.findUnique({
       where: { id: userId },
-      select: { id: true, name: true, email: true, contactNo: true , address:true },
+      select: { id: true, name: true, email: true, contactNo: true, address: true },
     });
 
+    let profileData;
+    
     if (userProfile) {
-      return c.json(userProfile);
+      profileData = userProfile;
+    } else if (serviceProfile) {
+      profileData = serviceProfile;
+    } else {
+      return c.json({ error: 'User not found' }, 404);
     }
-
-    if (serviceProfile) {
-      return c.json(serviceProfile);
-    }
-
-    return c.json({ error: 'User not found' }, 404);
+    
+    // Cache the profile data
+    await cacheHandler.set(c, 'profile', userId, profileData, 1800); // Cache for 30 minutes
+    
+    return c.json(profileData);
   } catch (error: any) {
     console.error('Error fetching profile data:', error);
     return c.json({ error: 'Failed to fetch profile data', details: error.message }, 500);
@@ -603,7 +704,7 @@ authRouter.get('/profile', jwtAuthMiddleware, async (c) => {
 
 
 // Profile route (put)
-authRouter.put('/profile',jwtAuthMiddleware, async (c) => {
+authRouter.put('/profile', jwtAuthMiddleware, async (c) => {
   const user = (c.req as any).user;
   const role = c.req.header('Role'); 
   const body = await c.req.json();
@@ -623,25 +724,28 @@ authRouter.put('/profile',jwtAuthMiddleware, async (c) => {
       return c.json({ error: 'Missing required fields' }, 400);
     }
 
+    let updatedProfile;
+    
     if (role === 'service') {
-      const updatedServiceProvider = await prisma.serviceProvider.update({
-        where: { id: userId },
-        data: { ...body },
-        select: { id: true, name: true, email: true, contactNo: true, address:true }
-      });
-
-      return c.json(updatedServiceProvider);
-    } else if (role === 'user') {
-      const updatedUser = await prisma.user.update({
+      updatedProfile = await prisma.serviceProvider.update({
         where: { id: userId },
         data: { ...body },
         select: { id: true, name: true, email: true, contactNo: true, address: true }
       });
-
-      return c.json(updatedUser);
+    } else if (role === 'user') {
+      updatedProfile = await prisma.user.update({
+        where: { id: userId },
+        data: { ...body },
+        select: { id: true, name: true, email: true, contactNo: true, address: true }
+      });
     } else {
       return c.json({ error: 'Invalid role' }, 400);
     }
+    
+    // Update cache with new profile data
+    await cacheHandler.set(c, 'profile', userId, updatedProfile, 1800); // Cache for 30 minutes
+    
+    return c.json(updatedProfile);
   } catch (error: any) {
     console.error('Error updating profile:', error);
     return c.json({ error: 'Failed to update profile', details: error.message }, 500);
@@ -649,7 +753,7 @@ authRouter.put('/profile',jwtAuthMiddleware, async (c) => {
 });
 
 // Update password route
-authRouter.put('/update-password',jwtAuthMiddleware, async (c) => {
+authRouter.put('/update-password', jwtAuthMiddleware, async (c) => {
   const body = await c.req.json();
 
   const { currentPassword, newPassword } = body;
@@ -681,6 +785,11 @@ authRouter.put('/update-password',jwtAuthMiddleware, async (c) => {
           where: { id: userId },
           data: { password: newPassword },
         });
+        
+        // Invalidate service provider caches
+        await cacheHandler.delete(c, 'user', userId);
+        await cacheHandler.delete(c, 'profile', userId);
+        await cacheHandler.delete(c, 'me', userId);
       }
     } else if (role === 'user') {
       validUser = await prisma.user.findUnique({
@@ -691,6 +800,11 @@ authRouter.put('/update-password',jwtAuthMiddleware, async (c) => {
           where: { id: userId },
           data: { password: newPassword },
         });
+        
+        // Invalidate user caches
+        await cacheHandler.delete(c, 'user', userId);
+        await cacheHandler.delete(c, 'profile', userId);
+        await cacheHandler.delete(c, 'me', userId);
       }
     } else {
       return c.json({ error: 'Invalid role' }, 400);
@@ -765,7 +879,5 @@ authRouter.post('/send-email', async (c) => {
     return c.json({ error: 'Internal server error' }, 500);
   }
 });
-
-
 
 export default authRouter;

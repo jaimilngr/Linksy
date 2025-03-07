@@ -26,6 +26,13 @@ interface user {
   name: string;
 }
 
+interface SortOptions {
+  status: string;
+  dateFrom: string;
+  dateTo: string;
+  enableDateFilter: boolean;
+}
+
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
   return date.toLocaleDateString("en-US", {
@@ -51,16 +58,45 @@ export const Ticket = () => {
   const [showChatModal, setShowChatModal] = useState<boolean>(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
 
+  // Sort states
+  const [showSortDropdown, setShowSortDropdown] = useState<boolean>(false);
+  const [sortOptions, setSortOptions] = useState<SortOptions>({
+    status: "",
+    dateFrom: "",
+    dateTo: "",
+    enableDateFilter: false,
+  });
+  const [appliedSort, setAppliedSort] = useState<SortOptions>({
+    status: "",
+    dateFrom: "",
+    dateTo: "",
+    enableDateFilter: false,
+  });
+
   const totalLimit = 2;
 
-  const fetchTickets = async () => {
+  const fetchTickets = async (options = appliedSort) => {
     try {
       const token = Cookies.get("token");
-      const response = await axios.get(`${BACKEND_URL}/api/v1/service/ticket`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+
+      // Build query parameters based on applied sort options
+      const params = new URLSearchParams();
+      if (options.status) params.append("status", options.status);
+      if (options.enableDateFilter) {
+        if (options.dateFrom) params.append("dateFrom", options.dateFrom);
+        if (options.dateTo) params.append("dateTo", options.dateTo);
+      }
+
+      const queryString = params.toString() ? `?${params.toString()}` : "";
+
+      const response = await axios.get(
+        `${BACKEND_URL}/api/v1/service/ticket${queryString}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       setTickets(response.data);
     } catch (error: any) {
       if (error.response) {
@@ -194,6 +230,42 @@ export const Ticket = () => {
     setDoneError(null);
   };
 
+  const handleSortChange = (
+    e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>
+  ) => {
+    const { name, value } = e.target;
+    setSortOptions((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const toggleDateFilter = () => {
+    setSortOptions((prev) => ({
+      ...prev,
+      enableDateFilter: !prev.enableDateFilter,
+    }));
+  };
+
+  const applySorting = () => {
+    setAppliedSort(sortOptions);
+    fetchTickets(sortOptions);
+    setShowSortDropdown(false);
+  };
+
+  const resetFilters = () => {
+    const resetOptions = {
+      status: "",
+      dateFrom: "",
+      dateTo: "",
+      enableDateFilter: false,
+    };
+    setSortOptions(resetOptions);
+    setAppliedSort(resetOptions);
+    fetchTickets(resetOptions);
+    setShowSortDropdown(false);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-full">
@@ -209,7 +281,8 @@ export const Ticket = () => {
     (ticket) =>
       ticket.status === "done" ||
       ticket.status === "cancel" ||
-      ticket.status === "rejected"
+      ticket.status === "rejected" ||
+      ticket.status === "expired"
   );
 
   return (
@@ -289,16 +362,15 @@ export const Ticket = () => {
 
             {showChatModal && selectedTicket && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
-                <div className="bg-white dark:bg-gray-600  px-4  rounded-lg shadow-lg sm:w-[600px]  ">
+                <div className="bg-white dark:bg-gray-600 px-4 rounded-lg shadow-lg sm:w-[600px]">
                   <div className="flex justify-end">
-
-                  <button
-                    className="mt-4 bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600"
-                    onClick={() => setShowChatModal(false)}
+                    <button
+                      className="mt-4 bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600"
+                      onClick={() => setShowChatModal(false)}
                     >
-                    X
-                  </button>{" "}
-                    </div>
+                      X
+                    </button>
+                  </div>
                   <Chat
                     user1Id={selectedTicket.userId}
                     user2Id={selectedTicket.serviceownedId}
@@ -312,13 +384,155 @@ export const Ticket = () => {
         )}
       </div>
 
-      {/* Previous Tickets Section */}
+      {/* Previous Tickets Section with Dropdown Sorting */}
       <div className="mt-12">
-        <h4 className="text-2xl font-semibold mb-4 text-text">
-          Previous Tickets
-        </h4>
+        <div className="flex justify-between items-center mb-4">
+          <h4 className="text-2xl font-semibold text-text">Previous Tickets</h4>
+
+          {/* Sort Dropdown Button */}
+          <div className="relative">
+            <button
+              onClick={() => setShowSortDropdown(!showSortDropdown)}
+              className="flex items-center bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors duration-300"
+            >
+              <span>Sort By</span>
+              <svg
+                className={`ml-2 w-4 h-4 transition-transform duration-200 ${
+                  showSortDropdown ? "transform rotate-180" : ""
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M19 9l-7 7-7-7"
+                ></path>
+              </svg>
+            </button>
+
+            {/* Sort Dropdown Menu */}
+            {/* Sort Dropdown Menu */}
+            {showSortDropdown && (
+              <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
+                <div className="p-4">
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Status:
+                    </label>
+                    <select
+                      name="status"
+                      value={sortOptions.status}
+                      onChange={handleSortChange}
+                      className="border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm w-full bg-white dark:bg-gray-700 dark:text-gray-300"
+                    >
+                      <option value="">All Statuses</option>
+                      <option value="cancel">Cancelled</option>
+                      <option value="done">Done</option>
+                      <option value="pending">Pending</option>
+                      <option value="working">Working</option>
+                      <option value="rejected">Rejected</option>
+                      <option value="expired">Expired</option>
+                    </select>
+                  </div>
+
+                  <div className="mb-3">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="enableDateFilter"
+                        checked={sortOptions.enableDateFilter}
+                        onChange={toggleDateFilter}
+                        className="mr-2"
+                      />
+                      <label
+                        htmlFor="enableDateFilter"
+                        className="text-sm font-medium text-gray-700 dark:text-gray-300"
+                      >
+                        Filter by Date
+                      </label>
+                    </div>
+                  </div>
+
+                  {sortOptions.enableDateFilter && (
+                    <div className="space-y-3 mb-4 pl-2 border-l-2 border-blue-200 dark:border-blue-500">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          From:
+                        </label>
+                        <input
+                          type="date"
+                          name="dateFrom"
+                          value={sortOptions.dateFrom}
+                          onChange={handleSortChange}
+                          className="border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm w-full bg-white dark:bg-gray-700 dark:text-gray-300"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                          To:
+                        </label>
+                        <input
+                          type="date"
+                          name="dateTo"
+                          value={sortOptions.dateTo}
+                          onChange={handleSortChange}
+                          className="border border-gray-300 dark:border-gray-600 rounded-md p-2 text-sm w-full bg-white dark:bg-gray-700 dark:text-gray-300"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-between mt-4">
+                    <button
+                      onClick={resetFilters}
+                      className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-3 py-1 rounded-md text-sm hover:bg-gray-300 dark:hover:bg-gray-600"
+                    >
+                      Reset
+                    </button>
+                    <button
+                      onClick={applySorting}
+                      className="bg-blue-500 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-600 dark:hover:bg-blue-400"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Active Sort Indicators */}
+        {(appliedSort.status || appliedSort.enableDateFilter) && (
+          <div className="mb-4 flex flex-wrap gap-2">
+            <span className="text-sm text-gray-500">Active filters:</span>
+            {appliedSort.status && (
+              <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                Status: {appliedSort.status}
+              </span>
+            )}
+            {appliedSort.enableDateFilter && appliedSort.dateFrom && (
+              <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                From: {appliedSort.dateFrom}
+              </span>
+            )}
+            {appliedSort.enableDateFilter && appliedSort.dateTo && (
+              <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                To: {appliedSort.dateTo}
+              </span>
+            )}
+          </div>
+        )}
+
         {previousTickets.length === 0 ? (
-          <p className="text-gray-500">No previous tickets yet.</p>
+          <p className="text-gray-500">
+            No previous tickets match your filters.
+          </p>
         ) : (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             {previousTickets.map((ticket) => (
@@ -351,7 +565,6 @@ export const Ticket = () => {
             <h2 className="text-xl font-semibold mb-4">Cancel Ticket</h2>
             <p className="mb-2">Please provide a reason for canceling:</p>
 
-            {/* Select for Cancellation Reasons */}
             <select
               value={cancelReason}
               onChange={(e) => {
@@ -369,7 +582,6 @@ export const Ticket = () => {
               <option value="Other">Other</option>
             </select>
 
-            {/* Conditional Input for Custom Reason */}
             {cancelReason === "Other" && (
               <input
                 type="text"
@@ -383,10 +595,8 @@ export const Ticket = () => {
               />
             )}
 
-            {/* Error Message */}
             {cancelError && <p className="text-red-600 mb-4">{cancelError}</p>}
 
-            {/* Action Buttons */}
             <div className="flex justify-end">
               <button
                 onClick={handleCancelSubmit}

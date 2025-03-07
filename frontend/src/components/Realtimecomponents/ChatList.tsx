@@ -37,24 +37,28 @@ const ChatList = ({ onSelectRoom, user }: { onSelectRoom: (roomId: string) => vo
         <p className="text-gray-600 dark:text-gray-400">No previous chats</p>
       ) : (
         <ul className="divide-y divide-gray-200 dark:divide-gray-700">
-          {chatRooms.map((room) => (
-            <li
-              key={room.id}
-              className="flex items-center gap-3 p-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
-              onClick={() => onSelectRoom(room.id)}
-            >
-              <div className="w-10 h-10 flex items-center justify-center rounded-full bg-blue-500 text-white font-bold">
-                {getInitial(room.other_user_name)}
-              </div>
-              <div className="flex-1">
-                <p className="text-lg font-medium text-gray-900 dark:text-gray-100">{room.other_user_name}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
-    {room.last_message?.trim() ? room.last_message : "No messages yet"}
-    </p>
+          {chatRooms.map((room) => {
+            // Only render the chat room if there's a last message
+            if (!room.last_message?.trim()) return null;
 
-              </div>
-            </li>
-          ))}
+            return (
+              <li
+                key={room.id}
+                className="flex items-center gap-3 p-4 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
+                onClick={() => onSelectRoom(room.id)}
+              >
+                <div className="w-10 h-10 flex items-center justify-center rounded-full bg-blue-500 text-white font-bold">
+                  {getInitial(room.other_user_name)}
+                </div>
+                <div className="flex-1">
+                  <p className="text-lg font-medium text-gray-900 dark:text-gray-100">{room.other_user_name}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
+                    {room.last_message?.trim()}
+                  </p>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>

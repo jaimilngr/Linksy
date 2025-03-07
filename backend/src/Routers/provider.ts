@@ -399,6 +399,7 @@ serviceRouter.get("/closest", async (c) => {
 
 
 // fetch service request tickets
+import { TicketStatus } from "@prisma/client"; // Import the TicketStatus enum
 
 serviceRouter.get("/ticket", async (c) => {
   const user = (c.req as any).user;
@@ -408,11 +409,25 @@ serviceRouter.get("/ticket", async (c) => {
 
   const userId = user.id as string;
 
-  
+  // Extract query parameters
+  const url = new URL(c.req.url);
+  const status = url.searchParams.get("status") as TicketStatus | null; // Cast to TicketStatus enum
+  const dateFrom = url.searchParams.get("dateFrom");
+  const dateTo = url.searchParams.get("dateTo");
+
   try {
     const servicereq = await prisma.ticket.findMany({
       where: {
         OR: [{ userId: userId }, { providerId: userId }],
+        ...(status ? { status: status as TicketStatus } : {}), // Ensure status is the correct enum type
+        ...(dateFrom || dateTo
+          ? {
+              date: {
+                ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
+                ...(dateTo ? { lte: new Date(dateTo) } : {}),
+              },
+            }
+          : {}),
       },
       select: {
         id: true,
@@ -422,8 +437,8 @@ serviceRouter.get("/ticket", async (c) => {
         status: true,
         originalPrice: true,
         negotiatedPrice: true,
-        userId: true,  
-        serviceownedId: true, 
+        userId: true,
+        serviceownedId: true,
         service: {
           select: {
             name: true,
@@ -431,13 +446,13 @@ serviceRouter.get("/ticket", async (c) => {
         },
         user: {
           select: {
-            cancelLimit: true, 
+            cancelLimit: true,
             name: true,
           },
         },
         provider: {
           select: {
-            cancelLimit: true, 
+            cancelLimit: true,
           },
         },
       },
