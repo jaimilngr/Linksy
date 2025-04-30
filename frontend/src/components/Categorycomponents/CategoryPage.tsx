@@ -5,7 +5,11 @@ import { BACKEND_URL } from "../../config";
 import { Footer } from "../Uicomponents/Footer";
 import SortDropdown from "../Uicomponents/SortDropdown";
 
-const CategoryPage = ({ location }: { location: { latitude: number; longitude: number } }) => {
+const CategoryPage = ({
+  location,
+}: {
+  location: { latitude: number; longitude: number };
+}) => {
   const { title } = useParams<{ title: string }>();
   const [services, setServices] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -60,7 +64,18 @@ const CategoryPage = ({ location }: { location: { latitude: number; longitude: n
     };
 
     fetchServices();
-  }, [title, location, sortOptions]); 
+  }, [title, location, sortOptions]);
+
+  // Helper function for dynamic pricing
+  const calculateDynamicPrice = (price: number) => {
+    const currentHour = new Date().getHours();
+
+    // Example: apply 20% discount between 6 PM and 9 PM
+    if (currentHour >= 18 && currentHour <= 21) {
+      return price * 0.8; // 20% discount
+    }
+    return price; // No discount outside of this time range
+  };
 
   const renderStars = (rating: number) => {
     const maxStars = 5;
@@ -89,6 +104,22 @@ const CategoryPage = ({ location }: { location: { latitude: number; longitude: n
     );
   };
 
+  const getBadges = (service: any) => {
+    const badges = [];
+    if (service.rating >= 4.5) badges.push("Top Rated");
+    if (service.price && service.price < 500) badges.push("Affordable");
+    if (service.distance && service.distance < 3) badges.push("Nearby");
+    if (service.reviewCount > 50) badges.push("Popular");
+    if (
+      service.createdAt &&
+      new Date(service.createdAt) >
+        new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
+    ) {
+      badges.push("New");
+    }
+    return badges;
+  };
+
   return (
     <div>
       <div className="container w-full mx-auto py-6 md:py-10 px-10">
@@ -96,8 +127,10 @@ const CategoryPage = ({ location }: { location: { latitude: number; longitude: n
           {title} Services
         </h1>
         <div className="flex justify-end">
-
-        <SortDropdown sortOptions={sortOptions} setSortOptions={setSortOptions} />
+          <SortDropdown
+            sortOptions={sortOptions}
+            setSortOptions={setSortOptions}
+          />
         </div>
 
         {loading && (
@@ -120,25 +153,56 @@ const CategoryPage = ({ location }: { location: { latitude: number; longitude: n
 
         {!loading && !error && services.length > 0 && (
           <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-10">
-            {services.map((service) => (
-              <div
-                key={service.id}
-                className="border border-gray-300 p-6 rounded-lg shadow-lg bg-[#ebeef4] dark:bg-[#374151] flex flex-col"
-                onClick={() => navigate(`/service/${service.id}`)}
-              >
-                <h2 className="text-xl md:text-2xl font-semibold mb-2">{service.name}</h2>
-                <div className="flex items-center mb-2">
-                  {renderStars(service.rating || 0)}
-                  <span className="ml-2">
-                    ({service.reviewCount || 0} reviews)
-                  </span>
+            {services.map((service) => {
+              const badges = getBadges(service);
+              const dynamicPrice = service.price ? calculateDynamicPrice(service.price) : "N/A";
+
+              return (
+                <div
+                  key={service.id}
+                  className="border border-gray-300 p-6 rounded-lg shadow-lg bg-[#ebeef4] dark:bg-[#374151] flex flex-col cursor-pointer hover:shadow-2xl transition"
+                  onClick={() => navigate(`/service/${service.id}`)}
+                >
+                  <h2 className="text-xl md:text-2xl font-semibold mb-2">
+                    {service.name}
+                  </h2>
+                  <div className="flex flex-col lg:flex-row lg:items-center gap-2 mb-2">
+                    <div className="flex items-center">
+                      {renderStars(service.rating || 0)}
+                      <span className="ml-2">
+                        ({service.reviewCount || 0} reviews)
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {badges.map((badge, idx) => (
+                        <span
+                          key={idx}
+                          className="text-xs font-semibold px-3 py-1 rounded-full
+        bg-blue-100 text-blue-800
+        dark:bg-blue-900 dark:text-blue-100"
+                        >
+                          {badge}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <p className="mb-4">
+                    {service.description || "Service description not available."}
+                  </p>
+
+                  <p className="mb-4">
+                    Distance: {service.distance ? service.distance.toFixed(2) : "N/A"} km
+                  </p>
+
+                  <p className="mb-4">
+                    Price: {dynamicPrice !== "N/A" ? `₹${dynamicPrice.toFixed(2)}` : "N/A"}
+                  </p>
+                  <p className="mb-4">Contact: {service.contactNo || "N/A"}</p>
                 </div>
-                <p className="mb-4">{service.description || "Service description not available."}</p>
-                <p className="mb-4">Distance: {service.distance ? service.distance.toFixed(2) : "N/A"} km</p>
-                <p className="mb-4">Price: {service.price || "N/A"}</p>
-                <p className="mb-4">Contact: {service.contactNo || "N/A"}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
