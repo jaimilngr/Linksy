@@ -131,7 +131,15 @@ const Chat = ({
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "chat_messages", filter: `room_id=eq.${roomId}` },
         (payload) => {
-          setMessages((prev) => [...prev, payload.new as Message]);
+          // Only add the message if it's not already in our messages array
+          // This prevents duplicate messages when we optimistically add them
+          const newMsg = payload.new as Message;
+          setMessages((prev) => {
+            // Check if the message is already in our list
+            const exists = prev.some(msg => msg.id === newMsg.id);
+            if (exists) return prev;
+            return [...prev, newMsg];
+          });
         }
       )
       .subscribe();
@@ -150,17 +158,40 @@ const Chat = ({
     if (!newMessage.trim() || !roomId || !currentUser) return;
 
     setIsLoading(true);
+    
+    // Create message object
+    const messageToSend = {
+      room_id: roomId,
+      sender_id: currentUser.id,
+      sender_name: currentUser.name,
+      message: newMessage,
+    };
 
-    await supabase.from("chat_messages").insert([
-      {
-        room_id: roomId,
-        sender_id: currentUser.id,
-        sender_name: currentUser.name,
-        message: newMessage,
-      },
-    ]);
-
+    // Optimistically add message to the UI
+    const optimisticMessage: Message = {
+      ...messageToSend,
+      id: `temp-${Date.now()}`, // Temporary ID until we get the real one
+      created_at: new Date().toISOString(),
+    };
+    
+    // Add the message to our local state immediately
+    setMessages(prev => [...prev, optimisticMessage]);
+    
+    // Clear input and reset loading state
     setNewMessage("");
+    
+    // Then send to the server
+    const { data, error } = await supabase
+      .from("chat_messages")
+      .insert([messageToSend])
+      .select();
+    
+    if (error) {
+      console.error("Error sending message:", error);
+      // Remove the optimistic message if there was an error
+      setMessages(prev => prev.filter(msg => msg.id !== optimisticMessage.id));
+    }
+    
     setIsLoading(false);
   };
 
@@ -214,7 +245,7 @@ const Chat = ({
         ) : (
           messages.map((msg) => {
             // Simple solution: "Jaimil" messages on right side, all others on left
-            const isCurrentUser = msg.sender_name === "Jaimil";
+            const isCurrentUser = msg.sender_name === currentUser.name;
 
             return (
               <div key={msg.id} className={`mb-6 ${isCurrentUser ? "text-right" : "text-left"}`}>

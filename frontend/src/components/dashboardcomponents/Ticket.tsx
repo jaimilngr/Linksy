@@ -33,6 +33,14 @@ interface SortOptions {
   enableDateFilter: boolean;
 }
 
+// Payment information interface
+interface PaymentInfo {
+  cardNumber: string;
+  expiryDate: string;
+  cvv: string;
+  name: string;
+}
+
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
   return date.toLocaleDateString("en-US", {
@@ -57,6 +65,16 @@ export const Ticket = () => {
   const [doneError, setDoneError] = useState<string | null>(null);
   const [showChatModal, setShowChatModal] = useState<boolean>(false);
   const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null);
+  
+  // New payment related state
+  const [showPaymentModal, setShowPaymentModal] = useState<boolean>(false);
+  const [paymentInfo, setPaymentInfo] = useState<PaymentInfo>({
+    cardNumber: "",
+    expiryDate: "",
+    cvv: "",
+    name: "",
+  });
+  const [paymentError, setPaymentError] = useState<string | null>(null);
 
   // Sort states
   const [showSortDropdown, setShowSortDropdown] = useState<boolean>(false);
@@ -175,9 +193,58 @@ export const Ticket = () => {
     }
   };
 
-  const handleMarkAsDone = async (ticketId: string) => {
+  // New handler for mark as done - shows payment modal first
+  const handleMarkAsDone = (ticketId: string) => {
     setCurrentTicketId(ticketId);
+    setShowPaymentModal(true); // Show payment modal first
+  };
+
+  // Handle payment form input changes
+  const handlePaymentInfoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setPaymentInfo(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    setPaymentError(null);
+  };
+
+  // Handle demo payment submission
+  const handlePaymentSubmit = () => {
+    setPaymentError(null);
+    
+    // Basic validation
+    if (!paymentInfo.cardNumber || paymentInfo.cardNumber.length < 16) {
+      setPaymentError("Please enter a valid card number (16 digits)");
+      return;
+    }
+    
+    if (!paymentInfo.expiryDate || !paymentInfo.expiryDate.includes('/')) {
+      setPaymentError("Please enter a valid expiry date (MM/YY)");
+      return;
+    }
+    
+    if (!paymentInfo.cvv || paymentInfo.cvv.length < 3) {
+      setPaymentError("Please enter a valid CVV (3 digits)");
+      return;
+    }
+    
+    if (!paymentInfo.name) {
+      setPaymentError("Please enter the cardholder name");
+      return;
+    }
+
+    // Close payment modal and show rating modal
+    setShowPaymentModal(false);
     setShowDoneModal(true);
+    
+    // Reset payment info
+    setPaymentInfo({
+      cardNumber: "",
+      expiryDate: "",
+      cvv: "",
+      name: ""
+    });
   };
 
   const handleDoneSubmit = async () => {
@@ -228,6 +295,7 @@ export const Ticket = () => {
   const handleInputInteraction = () => {
     setCancelError(null);
     setDoneError(null);
+    setPaymentError(null);
   };
 
   const handleSortChange = (
@@ -264,6 +332,16 @@ export const Ticket = () => {
     setAppliedSort(resetOptions);
     fetchTickets(resetOptions);
     setShowSortDropdown(false);
+  };
+
+  // Check if payment form is complete and valid to enable pay button
+  const isPaymentFormComplete = () => {
+    return (
+      paymentInfo.cardNumber.length >= 16 &&
+      paymentInfo.expiryDate.includes('/') &&
+      paymentInfo.cvv.length >= 3 &&
+      paymentInfo.name.trim() !== ''
+    );
   };
 
   if (loading) {
@@ -361,7 +439,7 @@ export const Ticket = () => {
             ))}
 
             {showChatModal && selectedTicket && (
-              <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center">
+              <div className="fixed inset-0 z-20 bg-black bg-opacity-50 flex justify-center items-center">
                 <div className="bg-white dark:bg-gray-600 px-4 rounded-lg shadow-lg sm:w-[600px]">
                   <div className="flex justify-end">
                     <button
@@ -414,7 +492,6 @@ export const Ticket = () => {
               </svg>
             </button>
 
-            {/* Sort Dropdown Menu */}
             {/* Sort Dropdown Menu */}
             {showSortDropdown && (
               <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-md shadow-lg z-10 border border-gray-200 dark:border-gray-700">
@@ -558,6 +635,98 @@ export const Ticket = () => {
         )}
       </div>
 
+      {/* Payment Modal - NEW */}
+      {showPaymentModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="bg-background border-black dark:border-gray-100 border p-6 rounded-lg shadow-lg w-full max-w-md">
+            <h2 className="text-xl font-semibold mb-4">Payment Information</h2>
+            <p className="mb-4 text-gray-600 dark:text-gray-300">
+              Please enter your payment details to complete the service.
+              <span className="text-sm italic block mt-1">(Demo only - no actual payment will be processed)</span>
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Card Number</label>
+                <input
+                  type="text"
+                  name="cardNumber"
+                  placeholder="1234 5678 9012 3456"
+                  value={paymentInfo.cardNumber}
+                  onChange={handlePaymentInfoChange}
+                  className="border border-gray-300 bg-background rounded-md p-2 w-full"
+                  maxLength={16}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Expiry Date</label>
+                  <input
+                    type="text"
+                    name="expiryDate"
+                    placeholder="MM/YY"
+                    value={paymentInfo.expiryDate}
+                    onChange={handlePaymentInfoChange}
+                    className="border border-gray-300 bg-background rounded-md p-2 w-full"
+                    maxLength={5}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-1">CVV</label>
+                  <input
+                    type="text"
+                    name="cvv"
+                    placeholder="123"
+                    value={paymentInfo.cvv}
+                    onChange={handlePaymentInfoChange}
+                    className="border border-gray-300 bg-background rounded-md p-2 w-full"
+                    maxLength={3}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">Cardholder Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  placeholder="John Doe"
+                  value={paymentInfo.name}
+                  onChange={handlePaymentInfoChange}
+                  className="border border-gray-300 bg-background rounded-md p-2 w-full"
+                />
+              </div>
+            </div>
+
+            {paymentError && (
+              <p className="text-red-600 mt-4 mb-2">{paymentError}</p>
+            )}
+
+            <div className="flex justify-end mt-6">
+              <button
+                onClick={() => setShowPaymentModal(false)}
+                className="bg-gray-300 text-gray-700 px-4 py-2 rounded-md mr-2 hover:bg-gray-400 transition-colors duration-300"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePaymentSubmit}
+                className={`px-4 py-2 rounded-md text-white ${
+                  isPaymentFormComplete()
+                    ? "bg-green-500 hover:bg-green-600"
+                    : "bg-green-300 cursor-not-allowed"
+                } transition-colors duration-300`}
+                disabled={!isPaymentFormComplete()}
+              >
+                Pay & Complete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Cancel Modal */}
       {showCancelModal && (
         <div className="fixed inset-0 flex items-center justify-center z-50">
@@ -614,10 +783,8 @@ export const Ticket = () => {
           </div>
         </div>
       )}
-
-
       
-      {/* Done Modal */}
+      {/* Rate Experience Modal */}
       {showDoneModal && (
         <div className="fixed inset-0 flex items-center justify-center z-50">
           <div className="bg-background border-black dark:border-gray-100 border p-6 rounded-lg shadow-lg w-full max-w-md">
@@ -647,7 +814,7 @@ export const Ticket = () => {
             <div className="flex justify-end">
               <button
                 onClick={handleDoneSubmit}
-                className="bg-green-500  text-white px-4 py-2 rounded-md mr-2 hover:bg-green-600 transition-colors duration-300"
+                className="bg-green-500 text-white px-4 py-2 rounded-md mr-2 hover:bg-green-600 transition-colors duration-300"
               >
                 Submit Rating
               </button>
