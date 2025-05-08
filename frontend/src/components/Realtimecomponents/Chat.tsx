@@ -181,7 +181,7 @@ const Chat = ({
     setNewMessage("");
     
     // Then send to the server
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from("chat_messages")
       .insert([messageToSend])
       .select();
